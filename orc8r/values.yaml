@@ -32,15 +32,15 @@ imagePullSecrets: []
 ## metrics subchart configuration.
 metrics:
   metrics:
-    create: false
+    create: true
   prometheus:
-    create: false
+    create: true
   prometheusCache:
-    create: false
+    create: true
   alertmanager:
-    create: false
+    create: true
   configmanager:
-    create: false
+    create: true
 
 # secrets subchart configuration.
 secrets:
@@ -48,10 +48,10 @@ secrets:
 
 # Define which secrets should be mounted by pods.
 secret:
-  certs: {{ .Release.Name }}-secrets-certs
+  certs: orc8r-secrets-certs
   configs:
-    orc8r: {{ .Release.Name }}-secrets-configs-orc8r
-  envdir: {{ .Release.Name }}-secrets-envdir
+    orc8r: orc8r-secrets-configs-orc8r
+  envdir: orc8r-secrets-envdir
 
 proxy:
   # Service configuration.
