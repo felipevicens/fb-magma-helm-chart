@@ -151,7 +151,7 @@ prometheusCache:
         targetPort: 9091
 
   image:
-    repository: orc8r_prometheus-cache
+    repository: fjvicens/orc8r_prometheus-cache
     tag: latest
     pullPolicy: IfNotPresent
 
