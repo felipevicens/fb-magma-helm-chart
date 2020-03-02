@@ -44,7 +44,7 @@ metrics:
 
 # secrets subchart configuration.
 secrets:
-  create: false
+  create: true
 
 # Define which secrets should be mounted by pods.
 secret:
