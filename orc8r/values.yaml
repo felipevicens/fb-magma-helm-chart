@@ -40,7 +40,7 @@ metrics:
   alertmanager:
     create: false
   configmanager:
-    create: true
+    create: false
 
 # secrets subchart configuration.
 secrets:
@@ -59,7 +59,7 @@ proxy:
     name: bootstrapper-orc8r-proxy
     annotations: {}
     labels: {}
-    type: ClusterIP
+    type: NodePort
     port:
       clientcert:
         port: 9443
