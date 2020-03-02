@@ -1,0 +1,175 @@
+# Copyright (c) 2018-present, Facebook, Inc.
+# All rights reserved.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree. An additional grant
+# of patent rights can be found in the PATENTS file in the same directory.
+
+## Global values for NMS chart
+nms:
+  magmalte:
+    manifests:
+      secrets: false
+      deployment: false
+      service: false
+      rbac: false
+    image:
+      repository: fjvicens/magmalte
+      tag: latest
+  nginx:
+    manifests:
+      configmap: false
+      secrets: false
+      deployment: false
+      service: false
+      rbac: false
+
+# Reference to one or more secrets to be used when pulling images
+# ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+imagePullSecrets: []
+# - name: orc8r-secrets-registry
+
+## metrics subchart configuration.
+metrics:
+  metrics:
+    create: false
+  prometheus:
+    create: false
+  prometheusCache:
+    create: false
+  alertmanager:
+    create: false
+  configmanager:
+    create: false
+
+# secrets subchart configuration.
+secrets:
+  create: false
+
+# Define which secrets should be mounted by pods.
+secret:
+  certs: orc8r-secrets-certs
+  configs:
+    orc8r: orc8r-secrets-configs-orc8r
+  envdir: orc8r-secrets-envdir
+
+proxy:
+  # Service configuration.
+  service:
+    name: bootstrapper-orc8r-proxy
+    annotations: {}
+    labels: {}
+    type: ClusterIP
+    port:
+      clientcert:
+        port: 9443
+        targetPort: 9443
+        nodePort: ""
+      open:
+        port: 9444
+        targetPort: 9444
+        nodePort: ""
+    loadBalancerIP: ""
+    loadBalancerSourceRanges: []
+
+  # proxy image
+  image:
+    repository: fjvicens/orc8r_proxy
+    tag: latest
+    pullPolicy: IfNotPresent
+
+  # Settings affecting proxy application
+  spec:
+    # magma controller domain name
+    hostname: "proxy"
+    http_proxy_hostname: "proxy"
+    http_proxy_backend: "proxy"
+    http_proxy_docker_hostname: "proxy"
+    http_proxy_github_hostname: "proxy"
+
+  # Number of proxy replicas desired
+  replicas: 1
+
+  # Resource limits & requests
+  resources: {}
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+  # Define which Nodes the Pods are scheduled on.
+  # ref: https://kubernetes.io/docs/user-guide/node-selection/
+  nodeSelector: {}
+
+  # Tolerations for use with node taints
+  # ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+  tolerations: []
+
+  # Assign proxy to run on specific nodes
+  # ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
+  affinity: {}
+
+controller:
+  # Service configuration.
+  service:
+    annotations: {}
+    labels: {}
+    type: ClusterIP
+    port: 8080
+    targetPort: 8080
+    # port range exposed by controller
+    portStart: 9079
+    portEnd: 9108
+
+  # controller image
+  image:
+    repository: fjvicens/orc8r_controller
+    tag: latest
+    pullPolicy: IfNotPresent
+
+  spec:
+    # Postgres/mysql configuration
+    database:
+      driver: postgres      # mysql/postgres
+      sql_dialect: psql # maria/psql
+      db: magma          # DB Name
+      protocol: tcp
+      host: postgresql
+      port: 5432
+      user: postgres
+      pass: postgres
+
+  migration:
+    new_handlers: 0
+    new_mconfigs: 0
+    mconfig_whitelist: ""
+
+  # Number of controller replicas desired
+  replicas: 1
+
+  # Resource limits & requests
+  resources: {}
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+  # Define which Nodes the Pods are scheduled on.
+  # ref: https://kubernetes.io/docs/user-guide/node-selection/
+  nodeSelector: {}
+
+  # Tolerations for use with node taints
+  # ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+  tolerations: []
+
+  # Assign proxy to run on specific nodes
+  # ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
+  affinity: {}
+
+# Set True to create a CloudWatch agent to monitor metrics 
+cloudwatch:
+  create: false
