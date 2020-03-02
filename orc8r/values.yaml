@@ -48,10 +48,10 @@ secrets:
 
 # Define which secrets should be mounted by pods.
 secret:
-  certs: orc8r-secrets-certs
+  certs: {{ .Release.Name }}-secrets-certs
   configs:
-    orc8r: orc8r-secrets-configs-orc8r
-  envdir: orc8r-secrets-envdir
+    orc8r: {{ .Release.Name }}-secrets-configs-orc8r
+  envdir: {{ .Release.Name }}-secrets-envdir
 
 proxy:
   # Service configuration.
