@@ -32,13 +32,13 @@ imagePullSecrets: []
 ## metrics subchart configuration.
 metrics:
   metrics:
-    create: true
+    create: false
   prometheus:
-    create: true
+    create: false
   prometheusCache:
-    create: true
+    create: false
   alertmanager:
-    create: true
+    create: false
   configmanager:
     create: true
 
