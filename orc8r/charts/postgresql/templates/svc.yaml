@@ -1,8 +1,8 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ template "postgresql.fullname" . }}
-  labels:
+#  name: {{ template "postgresql.fullname" . }}-read
+    name: postgresql  labels:
     app: {{ template "postgresql.name" . }}
     chart: {{ template "postgresql.chart" . }}
     release: {{ .Release.Name | quote }}

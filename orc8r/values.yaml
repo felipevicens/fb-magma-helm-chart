@@ -81,11 +81,11 @@ proxy:
   # Settings affecting proxy application
   spec:
     # magma controller domain name
-    hostname: "proxy"
-    http_proxy_hostname: "proxy"
-    http_proxy_backend: "proxy"
-    http_proxy_docker_hostname: "proxy"
-    http_proxy_github_hostname: "proxy"
+    hostname: "nginx-proxy"
+    http_proxy_hostname: "nginx-proxy"
+    http_proxy_backend: "nginx-proxy"
+    http_proxy_docker_hostname: "nginx-proxy"
+    http_proxy_github_hostname: "nginx-proxy"
 
   # Number of proxy replicas desired
   replicas: 1
