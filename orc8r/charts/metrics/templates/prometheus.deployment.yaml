@@ -49,6 +49,8 @@ spec:
 {{ toYaml .Values.metrics.volumes.prometheusConfig.volumeSpec | indent 10 }}
         - name: "prometheus-data"
 {{ toYaml .Values.metrics.volumes.prometheusData.volumeSpec | indent 10 }}
+        persistentVolumeClaim:
+          claimName: prometheus-pvc
         - name: "prometheus-config-file"
           configMap:
             name: prometheus-config-file
@@ -100,6 +102,19 @@ spec:
             periodSeconds: 30
           resources:
 {{ toYaml .Values.prometheus.resources | indent 12 }}
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: prometheus-pvc
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: openebs-hostpath
 
 ---
 apiVersion: v1
