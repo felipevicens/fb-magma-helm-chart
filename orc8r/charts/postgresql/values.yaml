@@ -39,7 +39,7 @@ image:
 
 ## String to fully override postgresql.fullname template
 ##
-# fullnameOverride:
+fullnameOverride: postgresql
 
 ##
 ## Init containers parameters:
@@ -131,7 +131,7 @@ postgresqlPassword: postgres
 ## Create a database
 ## ref: https://github.com/bitnami/bitnami-docker-postgresql/blob/master/README.md#creating-a-database-on-first-run
 ##
-# postgresqlDatabase:
+postgresqlDatabase: magma
 
 ## PostgreSQL data dir
 ## ref: https://github.com/bitnami/bitnami-docker-postgresql/blob/master/README.md
