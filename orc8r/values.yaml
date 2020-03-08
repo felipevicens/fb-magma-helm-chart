@@ -9,20 +9,20 @@
 nms:
   magmalte:
     manifests:
-      secrets: false
-      deployment: false
-      service: false
-      rbac: false
+      secrets: true
+      deployment: true
+      service: true
+      rbac: true
     image:
       repository: fjvicens/magmalte
       tag: latest
   nginx:
     manifests:
-      configmap: false
-      secrets: false
-      deployment: false
-      service: false
-      rbac: false
+      configmap: true
+      secrets: true
+      deployment: true
+      service: true
+      rbac: true
 
 # Reference to one or more secrets to be used when pulling images
 # ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
@@ -32,15 +32,15 @@ imagePullSecrets: []
 ## metrics subchart configuration.
 metrics:
   metrics:
-    create: false
+    create: true
   prometheus:
-    create: false
+    create: true
   prometheusCache:
-    create: false
+    create: true
   alertmanager:
-    create: false
+    create: true
   configmanager:
-    create: false
+    create: true
 
 # secrets subchart configuration.
 secrets:
@@ -136,7 +136,7 @@ controller:
       sql_dialect: psql # maria/psql
       db: magma          # DB Name
       protocol: tcp
-      host: postgresql
+      host: postgresql.default.svc.cluster.local
       port: 5432
       user: postgres
       pass: postgres
@@ -173,3 +173,9 @@ controller:
 # Set True to create a CloudWatch agent to monitor metrics 
 cloudwatch:
   create: false
+
+mariadb:
+  create: true
+
+postgresql:
+  create: true
