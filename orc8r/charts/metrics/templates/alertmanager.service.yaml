@@ -9,7 +9,7 @@ apiVersion: v1
 kind: Service
 metadata:
   # name: {{ .Release.Name }}-alertmanager
-  name: alertmanager
+  name: orc8r-alertmanager
   labels:
     app.kubernetes.io/component: alertmanager
 {{ include "metrics.labels" . | indent 4 }}
