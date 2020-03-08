@@ -60,7 +60,7 @@ prometheus:
 
 alertmanager:
   # Enable/Disable chart
-  create: true
+  create: false
 
   replicas: 1
 
