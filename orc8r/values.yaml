@@ -38,7 +38,7 @@ metrics:
   prometheusCache:
     create: true
   alertmanager:
-    create: true
+    create: false
   configmanager:
     create: true
 
