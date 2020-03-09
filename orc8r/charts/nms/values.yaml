@@ -77,8 +77,8 @@ nginx:
 
   deployment:
     spec:
-      ssl_cert_name: controller.crt
-      ssl_cert_key_name: controller.key
+      ssl_cert_name: nms_controller.pem
+      ssl_cert_key_name: nms_controller.key
 
   tolerations: []
 
