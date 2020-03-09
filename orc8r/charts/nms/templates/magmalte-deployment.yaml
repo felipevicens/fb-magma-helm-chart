@@ -93,11 +93,11 @@ spec:
             - containerPort: 8081
           volumeMounts:
             - name: orc8r-secrets-certs
-              mountPath: /usr/src/fbcnms-projects/magmalte/certs/admin_operator.pem
-              subPath: admin_operator.pem
+              mountPath: /usr/src/fbcnms-projects/magmalte/certs/nms_controller.pem
+              subPath: nms_controller.pem
             - name: orc8r-secrets-certs
-              mountPath: /usr/src/fbcnms-projects/magmalte/certs/admin_operator.key.pem
-              subPath: admin_operator.key.pem
+              mountPath: /usr/src/fbcnms-projects/magmalte/certs/nms_controller.key
+              subPath: nms_controller.key
       volumes:
         - name: orc8r-secrets-certs
           secret:
