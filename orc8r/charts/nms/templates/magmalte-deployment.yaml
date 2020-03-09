@@ -58,9 +58,9 @@ spec:
             - start:dev
           env:
             - name: API_CERT_FILENAME
-              value: /usr/src/fbcnms-projects/magmalte/certs/admin_operator.pem
+              value: /usr/src/fbcnms-projects/magmalte/certs/nms_controller.pem
             - name: API_PRIVATE_KEY_FILENAME
-              value: /usr/src/fbcnms-projects/magmalte/certs/admin_operator.key.pem
+              value: /usr/src/fbcnms-projects/magmalte/certs/nms_controller.key
             - name: API_HOST
               value: {{ .Values.magmalte.env.api_host | quote }}
             - name: HOST
