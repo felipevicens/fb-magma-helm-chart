@@ -69,7 +69,7 @@ nginx:
     pullPolicy: Always
 
   service:
-    type: ClusterIP
+    type: NodePort
     https:
       port: 443
       targetport: 443
@@ -77,8 +77,8 @@ nginx:
 
   deployment:
     spec:
-      ssl_cert_name: nms_controller.pem
-      ssl_cert_key_name: nms_controller.key
+      ssl_cert_name: controller.pem
+      ssl_cert_key_name: controller.key
 
   tolerations: []
 
