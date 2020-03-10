@@ -59,6 +59,61 @@ spec:
         - name: "empty-configs"
           emptyDir: {}
         {{- end }}
+      initContainers:
+        - name: {{ $serviceName }}-init
+          image: {{ required "controller.image.repository must be provided" .Values.controller.image.repository }}:{{ .Values.controller.image.tag }}
+          imagePullPolicy: {{ .Values.controller.image.pullPolicy }}
+          volumeMounts:
+            {{- range tuple "certs" "envdir" }}
+            - name: {{ . }}
+              mountPath: /var/opt/magma/{{ . }}
+              readOnly: true
+            {{- end }}
+            {{- if .Values.secret.configs }}
+            {{- range $module, $secretName := .Values.secret.configs }}
+            - name: {{ $secretName }}
+              mountPath: {{ print "/var/opt/magma/configs/" $module }}
+              readOnly: true
+            {{- end }}
+            {{- else }}
+            - name: "empty-configs"
+              mountPath: /var/opt/magma/configs
+              readOnly: true
+            {{- end }}
+          ports:
+            {{- with .Values.controller.service }}
+            - containerPort: {{ .targetPort }}
+            {{- range $_, $port := untilStep (.portStart | int) (.portEnd | add1 | int) 1 }}
+            - containerPort: {{ $port }}
+            {{- end }}
+            {{- end }}
+          env:
+            - name: DATABASE_SOURCE
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $serviceName }}
+                  key: {{ .Values.controller.spec.database.driver }}.connstr
+            - name: SQL_DRIVER
+              value: {{ .Values.controller.spec.database.driver }}
+            - name: SQL_DIALECT
+              value: {{ .Values.controller.spec.database.sql_dialect }}
+            # Hostname override for dispatcher
+            - name: SERVICE_HOST_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            # Hostname override for metricsd
+            - name: HOST_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: USE_NEW_HANDLERS
+              value: "{{ .Values.controller.migration.new_handlers }}"
+            - name: USE_NEW_MCONFIGS
+              value: "{{ .Values.controller.migration.new_mconfigs }}"
+            - name: NEW_MCONFIGS_WHITELIST
+              value: {{ .Values.controller.migration.mconfig_whitelist }}
+          command: ["/bin/sh", "-c"]
       containers:
         - name: {{ $serviceName }}
           image: {{ required "controller.image.repository must be provided" .Values.controller.image.repository }}:{{ .Values.controller.image.tag }}

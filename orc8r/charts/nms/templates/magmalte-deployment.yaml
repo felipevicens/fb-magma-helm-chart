@@ -47,6 +47,52 @@ spec:
       imagePullSecrets:
 {{ toYaml . | trimSuffix "\n" | indent 8 }}
       {{- end }}
+      initContainers:
+        - name: {{ .Chart.Name }}-init
+          image: "{{ .Values.magmalte.image.repository }}:{{ .Values.magmalte.image.tag }}"
+          imagePullPolicy: {{ .Values.magmalte.image.pullPolicy }}
+          {{- if .Values.resources }}
+          resources: {{- toYaml .Values.resources | nindent 12 }}
+          {{- end }}
+          args:
+            - yarn
+            - setAdminPassword 
+            - osm@etsi.org
+            - magma
+          env:
+            - name: API_CERT_FILENAME
+              value: /usr/src/fbcnms-projects/magmalte/certs/nms_controller.pem
+            - name: API_PRIVATE_KEY_FILENAME
+              value: /usr/src/fbcnms-projects/magmalte/certs/nms_controller.key
+            - name: API_HOST
+              value: {{ .Values.magmalte.env.api_host | quote }}
+            - name: HOST
+              value: {{ .Values.magmalte.env.host | quote }}
+            - name: PORT
+              value: {{ .Values.magmalte.env.port | quote }}
+            - name: MAPBOX_ACCESS_TOKEN
+              value: {{ .Values.magmalte.env.mapbox_access_token | quote }}
+            - name: MYSQL_DB
+              value: {{ .Values.magmalte.env.mysql_db | quote }}
+            - name: MYSQL_HOST
+              value: {{ .Values.magmalte.env.mysql_host | quote }}
+            - name: MYSQL_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: magmalte-mysql-secrets
+                  key: MYSQL_PASS
+            - name: MYSQL_USER
+              valueFrom:
+                secretKeyRef:
+                  name: magmalte-mysql-secrets
+                  key: MYSQL_USER
+          volumeMounts:
+            - name: orc8r-secrets-certs
+              mountPath: /usr/src/fbcnms-projects/magmalte/certs/nms_controller.pem
+              subPath: nms_controller.pem
+            - name: orc8r-secrets-certs
+              mountPath: /usr/src/fbcnms-projects/magmalte/certs/nms_controller.key
+              subPath: nms_controller.key
       containers:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.magmalte.image.repository }}:{{ .Values.magmalte.image.tag }}"
