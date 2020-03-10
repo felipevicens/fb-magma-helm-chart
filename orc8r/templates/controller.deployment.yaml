@@ -113,7 +113,7 @@ spec:
               value: "{{ .Values.controller.migration.new_mconfigs }}"
             - name: NEW_MCONFIGS_WHITELIST
               value: {{ .Values.controller.migration.mconfig_whitelist }}
-          command: ["/bin/sh", "-c"]
+          command: ["/var/opt/magma/bin/accessc", "add-existing", "-admin", "-cert", "/var/opt/magma/certs/admin_operator.pem", "admin_operator"]
       containers:
         - name: {{ $serviceName }}
           image: {{ required "controller.image.repository must be provided" .Values.controller.image.repository }}:{{ .Values.controller.image.tag }}
