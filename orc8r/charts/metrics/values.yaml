@@ -148,7 +148,7 @@ prometheusCache:
     labels: {}
     type: ClusterIP
     ports:
-      - name: prometheus-cache
+      - name: orc8r-prometheus-cache
         port: 9091
         targetPort: 9091
 

@@ -69,7 +69,7 @@ nginx:
     pullPolicy: Always
 
   service:
-    type: NodePort
+    type: LoadBalancer
     https:
       port: 443
       targetport: 443

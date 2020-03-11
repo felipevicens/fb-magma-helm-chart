@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: prometheus-cache
+    app.kubernetes.io/instance: lopsided-echidna
+    app.kubernetes.io/managed-by: Tiller
+    app.kubernetes.io/name: metrics
+    app.kubernetes.io/version: "1.0"
+    helm.sh/chart: metrics-0.1.1
+  name: orc8r-prometheus-cache
+  namespace: default
+spec:
+  ports:
+  - name: orc8r-prometheus-cache
+    port: 9091
+    protocol: TCP
+    targetPort: 9091
+  selector:
+    app.kubernetes.io/component: prometheus-cache
+    app.kubernetes.io/instance: lopsided-echidna
+    app.kubernetes.io/name: metrics
+  type: ClusterIP
