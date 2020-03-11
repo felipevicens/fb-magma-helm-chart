@@ -81,16 +81,16 @@ proxy:
   # Settings affecting proxy application
   spec:
     # magma controller domain name
-    hostname: "nginx-proxy"
-    http_proxy_hostname: "nginx-proxy"
-    http_proxy_backend: "nginx-proxy"
-    http_proxy_docker_hostname: "nginx-proxy"
-    http_proxy_github_hostname: "nginx-proxy"
+    hostname: "orc8r-controller"
+    http_proxy_hostname: "orc8r-proxy"
+    http_proxy_backend: "orc8r-proxy"
+    http_proxy_docker_hostname: ""
+    http_proxy_github_hostname: ""
 
   # Number of proxy replicas desired
   replicas: 1
 
-  # Resource limits & requests
+  # Resource limits & requestss
   resources: {}
   # limits:
   #   cpu: 100m
