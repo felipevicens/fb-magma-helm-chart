@@ -15,7 +15,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .Release.Name }}-clientcert-legacy
+  name: orc8r-clientcert-legacy
   labels:
     app.kubernetes.io/component: proxy
 {{ include "labels" . | indent 4 }}

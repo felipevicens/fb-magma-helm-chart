@@ -121,5 +121,5 @@ spec:
             path: /var/lib/docker/containers
         - name: config-volume
           configMap:
-            name: {{ .Release.Name }}-fluentd-es-configs
+            name: orc8r-fluentd-es-configs
 {{- end}}

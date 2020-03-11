@@ -44,5 +44,5 @@ spec:
   selector:
     app: "{{ template "mariadb.name" . }}"
     component: "slave"
-    release: "{{ .Release.Name }}"
+    release: "orc8r"
 {{- end }}

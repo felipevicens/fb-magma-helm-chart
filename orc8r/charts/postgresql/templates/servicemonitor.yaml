@@ -29,5 +29,5 @@ spec:
   selector:
     matchLabels:
       app: {{ template "postgresql.name" . }}
-      release: {{ .Release.Name }}
+      release: orc8r
 {{- end }}

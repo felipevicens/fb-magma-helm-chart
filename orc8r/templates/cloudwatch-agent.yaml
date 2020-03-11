@@ -16,14 +16,14 @@ of patent rights can be found in the PATENTS file in the same directory.
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: {{ .Release.Name }}-cloudwatch
+  name: orc8r-cloudwatch
   namespace: {{ .Release.Namespace }}
 
 ---
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: {{ .Release.Name }}-cloudwatch-role
+  name: orc8r-cloudwatch-role
 rules:
   - apiGroups: [""]
     resources: ["pods", "nodes", "endpoints"]
@@ -49,14 +49,14 @@ rules:
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: {{ .Release.Name }}-cloudwatch-role-binding
+  name: orc8r-cloudwatch-role-binding
 subjects:
   - kind: ServiceAccount
-    name: {{ .Release.Name }}-cloudwatch
+    name: orc8r-cloudwatch
     namespace: {{ .Release.Namespace }}
 roleRef:
   kind: ClusterRole
-  name: {{ .Release.Name }}-cloudwatch-role
+  name: orc8r-cloudwatch-role
   apiGroup: rbac.authorization.k8s.io
 
 ---
@@ -86,19 +86,19 @@ metadata:
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
-  name: {{ .Release.Name }}-cloudwatch
+  name: orc8r-cloudwatch
   namespace: {{ .Release.Namespace }}
 spec:
   selector:
     matchLabels:
-      name: {{ .Release.Name }}-cloudwatch
+      name: orc8r-cloudwatch
   template:
     metadata:
       labels:
-        name: {{ .Release.Name }}-cloudwatch
+        name: orc8r-cloudwatch
     spec:
       containers:
-        - name: {{ .Release.Name }}-cloudwatch
+        - name: orc8r-cloudwatch
           image: amazon/cloudwatch-agent:1.226589.0
           resources:
             limits:
@@ -162,5 +162,5 @@ spec:
           hostPath:
             path: /dev/disk/
       terminationGracePeriodSeconds: 60
-      serviceAccountName: {{ .Release.Name }}-cloudwatch
+      serviceAccountName: orc8r-cloudwatch
 {{- end }}

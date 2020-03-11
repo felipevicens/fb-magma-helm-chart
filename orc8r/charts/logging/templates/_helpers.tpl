@@ -37,7 +37,7 @@ Common labels
 {{- define "logging.labels" -}}
 app.kubernetes.io/name: {{ include "logging.name" . }}
 helm.sh/chart: {{ include "logging.chart" . }}
-app.kubernetes.io/instance: {{ .Release.Name }}
+app.kubernetes.io/instance: orc8r
 {{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}

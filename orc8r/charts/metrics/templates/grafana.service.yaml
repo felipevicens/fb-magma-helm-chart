@@ -8,7 +8,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .Release.Name }}-grafana
+  name: orc8r-grafana
   #name: orc8r-grafana
   labels:
     app.kubernetes.io/component: grafana

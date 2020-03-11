@@ -9,7 +9,7 @@ of patent rights can be found in the PATENTS file in the same directory.
 {{/* Generate basic labels */}}
 {{- define "labels" -}}
 app.kubernetes.io/name: {{ .Chart.Name }}
-app.kubernetes.io/instance: {{ .Release.Name }}
+app.kubernetes.io/instance: orc8r
 app.kubernetes.io/managed-by: helm
 app.kubernetes.io/part-of: magma
 helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
@@ -18,5 +18,5 @@ helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
 {{/* Generate selector labels */}}
 {{- define "selector-labels" -}}
 app.kubernetes.io/name: {{ .Chart.Name }}
-app.kubernetes.io/instance: {{ .Release.Name }}
+app.kubernetes.io/instance: orc8r
 {{- end -}}

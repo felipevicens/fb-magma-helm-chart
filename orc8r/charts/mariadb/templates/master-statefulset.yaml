@@ -5,14 +5,14 @@ metadata:
   labels:
     app: {{ template "mariadb.name" . }}
     chart: {{ template "mariadb.chart" . }}
-    release: {{ .Release.Name }}
+    release: orc8r
     heritage: {{ .Release.Service }}
     component: master
 spec:
   selector:
     matchLabels:
       app: {{ template "mariadb.name" . }}
-      release: {{ .Release.Name }}
+      release: orc8r
       component: master
   serviceName: {{ template "master.fullname" . }}
   replicas: 1
@@ -30,7 +30,7 @@ spec:
       labels:
         app: {{ template "mariadb.name" . }}
         chart: {{ template "mariadb.chart" . }}
-        release: {{ .Release.Name }}
+        release: orc8r
         component: master
     spec:
       {{- if .Values.schedulerName }}
@@ -53,7 +53,7 @@ spec:
               labelSelector:
                 matchLabels:
                   app: {{ template "mariadb.name" . }}
-                  release: {{ .Release.Name }}
+                  release: orc8r
       {{- else if eq .Values.master.antiAffinity "soft" }}
       affinity:
       {{- with .Values.master.affinity  }}
@@ -67,7 +67,7 @@ spec:
                 labelSelector:
                   matchLabels:
                     app: {{ template "mariadb.name" . }}
-                    release: {{ .Release.Name }}
+                    release: orc8r
       {{- else}}
       {{- with .Values.master.affinity }}
       affinity: {{ toYaml . | nindent 8 }}
