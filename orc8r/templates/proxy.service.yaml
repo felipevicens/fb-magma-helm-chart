@@ -9,7 +9,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: orc8r-proxy
+  name: {{ .Release.Name }}-proxy
   labels:
     app.kubernetes.io/component: proxy
 {{ include "labels" . | indent 4 }}

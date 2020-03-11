@@ -59,7 +59,7 @@ proxy:
     name: bootstrapper-orc8r-proxy
     annotations: {}
     labels: {}
-    type: LoadBalancer
+    type: ClusterIP
     port:
       clientcert:
         port: 9443
@@ -81,11 +81,11 @@ proxy:
   # Settings affecting proxy application
   spec:
     # magma controller domain name
-    hostname: "orc8r-controller"
-    http_proxy_hostname: "orc8r-proxy"
-    http_proxy_backend: "orc8r-proxy"
-    http_proxy_docker_hostname: ""
-    http_proxy_github_hostname: ""
+    hostname: "controller.magma.test"
+    http_proxy_backend: "orc8r-controller"
+    #http_proxy_hostname: ""
+    #http_proxy_docker_hostname: ""
+    #http_proxy_github_hostname: ""
 
   # Number of proxy replicas desired
   replicas: 1
@@ -136,7 +136,7 @@ controller:
       sql_dialect: psql # maria/psql
       db: magma          # DB Name
       protocol: tcp
-      host: postgresql.default.svc.cluster.local
+      host: postgresql
       port: 5432
       user: postgres
       pass: postgres
