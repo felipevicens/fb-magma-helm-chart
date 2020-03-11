@@ -59,7 +59,7 @@ proxy:
     name: bootstrapper-orc8r-proxy
     annotations: {}
     labels: {}
-    type: ClusterIP
+    type: LoadBalancer
     port:
       clientcert:
         port: 9443
