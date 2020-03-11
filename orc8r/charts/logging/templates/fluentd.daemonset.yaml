@@ -12,7 +12,7 @@ Fluentd daemonset goes in kube-system namespace due to the system-node-critical
 priority class
 */}}
 {{- if .Values.fluentd_daemon.create }}
-{{- $serviceName := print .Release.Name "-fluentd-daemon" -}}
+{{- $serviceName := "orc8r-fluentd-daemon" -}}
 apiVersion: v1
 kind: ServiceAccount
 metadata:

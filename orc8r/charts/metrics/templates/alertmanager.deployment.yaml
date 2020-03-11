@@ -7,7 +7,7 @@ LICENSE file in the root directory of this source tree. An additional grant
 of patent rights can be found in the PATENTS file in the same directory.
 */}}
 {{- if .Values.alertmanager.create }}
-{{- $serviceName := print .Release.Name "-alertmanager" -}}
+{{- $serviceName := "orc8r-alertmanager" -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
