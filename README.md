@@ -25,3 +25,6 @@ osm nspkg-create fb_magma_ns.tar.gz
 ```bash
 osm ns-create --ns_name magma --nsd_name <name> --vim_account <your_vim>
 ```
+
+
+END
