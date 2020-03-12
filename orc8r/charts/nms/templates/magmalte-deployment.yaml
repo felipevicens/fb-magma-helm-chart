@@ -50,10 +50,6 @@ spec:
       containers:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.magmalte.image.repository }}:{{ .Values.magmalte.image.tag }}"
-          #lifecycle:
-          #  postStart:
-          #    exec:
-          #      command: ["/bin/sh", "-c", "/bin/sleep 120;", "yarn", "migrate;", "yarn", "setAdminPassword", "osm@etsi.org", "magma"]
           lifecycle:
             postStart:
               exec:
@@ -129,8 +125,8 @@ spec:
           args:
             - yarn
             - setAdminPassword 
-            - osm@etsi.org 
-            - magma
+            - admin@magma.test 
+            - password1234
           env:
             - name: API_CERT_FILENAME
               value: /usr/src/fbcnms-projects/magmalte/certs/admin_operator.pem
