@@ -69,7 +69,7 @@ proxy:
         port: 9444
         targetPort: 9444
         nodePort: ""
-    loadBalancerIP: ""
+    loadBalancerIP: "172.21.250.210"
     loadBalancerSourceRanges: []
 
   # proxy image
