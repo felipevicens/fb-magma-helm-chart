@@ -3,9 +3,9 @@ entries:
   orc8r:
   - apiVersion: v1
     appVersion: "1.0"
-    created: 2020-04-14T12:57:29.835643929+02:00
+    created: 2020-04-14T13:23:59.808536453+02:00
     description: A Helm chart for magma orchestrator
-    digest: c04f9c0a844f14e11cf538c9e99975178ccdef0654b7526c1855fd2627c1a89c
+    digest: 2e055ab13b4c573b93ab96ddc4104d0c23ab70ee6596dca2b25b05e04f892e92
     engine: gotpl
     keywords:
     - magma
@@ -16,4 +16,4 @@ entries:
     urls:
     - https://felipevicens.github.io/fb-magma-helm-chart/orc8r-0.1.3.tgz
     version: 0.1.3
-generated: 2020-04-14T12:57:29.823791061+02:00
+generated: 2020-04-14T13:23:59.801224105+02:00
