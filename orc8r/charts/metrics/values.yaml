@@ -7,16 +7,18 @@ metrics:
   volumes:
     prometheusData:
       volumeSpec:
-        persistentVolumeClaim:
-          claimName: prometheus-pvc
+        emptyDir: {}
+#        persistentVolumeClaim:
+#          claimName: prometheus-pvc
 #        hostPath:
 #          path: /prometheusData
 #          type: DirectoryOrCreate
     prometheusConfig:
       volumeSpec:
-        hostPath:
-          path: /configs/prometheus
-          type: DirectoryOrCreate
+        emptyDir: {}
+#        hostPath:
+#          path: /configs/prometheus
+#          type: DirectoryOrCreate
 
 prometheus:
   # Enable/Disable chart
