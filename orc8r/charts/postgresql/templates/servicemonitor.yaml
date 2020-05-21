@@ -4,7 +4,7 @@ kind: ServiceMonitor
 metadata:
   name: {{ include "postgresql.fullname" . }}
   {{- if .Values.metrics.serviceMonitor.namespace }}
-  namespace: {{ .Values.metrics.serviceMonitor.namespace }}
+    namespace: {{ .Release.Namespace }}
   {{- end }}
   labels:
     app: {{ template "postgresql.name" . }}

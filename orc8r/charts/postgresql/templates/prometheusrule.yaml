@@ -4,7 +4,7 @@ kind: PrometheusRule
 metadata:
   name: {{ template "postgresql.fullname" . }}
 {{- with .Values.metrics.prometheusRule.namespace }}
-  namespace: {{ . }}
+    namespace: {{ .Release.Namespace }}
 {{- end }}
   labels:
     app: {{ template "postgresql.name" . }}
