@@ -53,6 +53,8 @@ secret:
     orc8r: orc8r-secrets-configs-orc8r
   envdir: orc8r-secrets-envdir
 
+proxyserviceloadBalancerIP: ""
+
 proxy:
   # Service configuration.
   service:
