@@ -54,6 +54,7 @@ secret:
   envdir: orc8r-secrets-envdir
 
 proxyserviceloadBalancerIP: ""
+nginxserviceloadBalancerIP: ""
 
 proxy:
   # Service configuration.
