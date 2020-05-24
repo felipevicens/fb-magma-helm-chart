@@ -65,6 +65,10 @@ spec:
           imagePullPolicy: {{ .Values.controller.image.pullPolicy }}
           #command: ["/bin/sh", "-c", "/usr/bin/supervisord && echo SLEEPING && /bin/sleep 120 && echo CONFIGURING && /var/opt/magma/bin/accessc add-existing -admin -cert /var/opt/magma/certs/admin_operator.pem admin_operator"]
           #command: ["/bin/sh", "-c", "/usr/local/bin/wait-for-it.sh -s -t 30 postgresql:5432 && /var/opt/magma/bin/accessc add-existing -admin -cert /var/opt/magma/certs/admin_operator.pem admin_operator && /usr/bin/supervisord"]
+          lifecycle:
+            postStart:
+              exec: 
+                command: ["/bin/sh", "-c", "/usr/local/bin/wait-for-it.sh -s -t 30 postgresql:5432 && /var/opt/magma/bin/accessc add-existing -admin -cert /var/opt/magma/certs/admin_operator.pem admin_operator"]
           volumeMounts:
             {{- range tuple "certs" "envdir" }}
             - name: {{ . }}
