@@ -53,7 +53,7 @@ spec:
           lifecycle:
             postStart:
               exec:
-                command: ["/bin/sh", "-c", "apk add screen; screen -dmS config '/bin/sleep 120; yarn setAdminPassword osm@etsi.org magma'"]
+                command: ["/bin/sh", "-c", "screen -dmS config '/bin/sleep 120; yarn setAdminPassword osm@etsi.org magma'"]
           imagePullPolicy: {{ .Values.magmalte.image.pullPolicy }}
 {{ tuple $envAll $envAll.Values.pod.resources.magmalte | include "nms.kubernetes_resources" | indent 10 }}
           args:
