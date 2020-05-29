@@ -1,0 +1,227 @@
+files:
+  - loader: k8s
+    path: orc8h.yaml
+nodes:
+  - kind: ConfigMap
+    name: nginx-proxy-etc
+    plugin: kubernetes-config-map
+    position:
+      x: 280
+      y: 480
+  - kind: ConfigMap
+    name: orc8r-fluentd-es-configs
+    plugin: kubernetes-config-map
+    position:
+      x: 280
+      y: 1200
+  - kind: ConfigMap
+    name: prometheus-config-file
+    plugin: kubernetes-config-map
+    position:
+      x: 960
+      y: 960
+  - kind: ConfigMap
+    name: release-name-mariadb
+    plugin: kubernetes-config-map
+    position:
+      x: 582
+      y: 240
+  - kind: ConfigMap
+    name: release-name-mariadb-tests
+    plugin: kubernetes-config-map
+    position:
+      x: 627
+      y: 360
+  - kind: Deployment
+    name: nms-magmalte
+    plugin: kubernetes-deployment
+    position:
+      x: 335
+      y: 40
+  - kind: Deployment
+    name: nms-nginx-proxy
+    plugin: kubernetes-deployment
+    position:
+      x: 514
+      y: 1000
+  - kind: Deployment
+    name: orc8r-configmanager
+    plugin: kubernetes-deployment
+    position:
+      x: 1740
+      y: 960
+  - kind: Deployment
+    name: orc8r-controller
+    plugin: kubernetes-deployment
+    position:
+      x: 1490
+      y: 320
+  - kind: Deployment
+    name: orc8r-grafana
+    plugin: kubernetes-deployment
+    position:
+      x: 960
+      y: 560
+  - kind: Deployment
+    name: orc8r-prometheus
+    plugin: kubernetes-deployment
+    position:
+      x: 1201
+      y: 960
+  - kind: Deployment
+    name: orc8r-prometheus-cache
+    plugin: kubernetes-deployment
+    position:
+      x: 960
+      y: 760
+  - kind: Deployment
+    name: orc8r-proxy
+    plugin: kubernetes-deployment
+    position:
+      x: -219
+      y: 240
+  - kind: Pod
+    name: release-name-mariadb-test-mhow6
+    plugin: kubernetes-pod
+    position:
+      x: 942
+      y: 360
+  - kind: Secret
+    name: magmalte-mysql-secrets
+    plugin: kubernetes-secret
+    position:
+      x: 40
+      y: 40
+  - kind: Secret
+    name: orc8r-controller
+    plugin: kubernetes-secret
+    position:
+      x: 1280
+      y: 320
+  - kind: Secret
+    name: orc8r-secrets-certs
+    plugin: kubernetes-secret
+    position:
+      x: 40
+      y: 1080
+  - kind: Secret
+    name: orc8r-secrets-configs-orc8r
+    plugin: kubernetes-secret
+    position:
+      x: 1200
+      y: 1160
+  - kind: Secret
+    name: orc8r-secrets-envdir
+    plugin: kubernetes-secret
+    position:
+      x: 280
+      y: 1080
+  - kind: Secret
+    name: orc8r-secrets-registry
+    plugin: kubernetes-secret
+    position:
+      x: 960
+      y: 1120
+  - kind: Secret
+    name: postgresql
+    plugin: kubernetes-secret
+    position:
+      x: 200
+      y: 320
+  - kind: Secret
+    name: release-name-mariadb
+    plugin: kubernetes-secret
+    position:
+      x: 652
+      y: 40
+  - kind: Service
+    name: bootstrapper-orc8r-proxy
+    plugin: kubernetes-service
+    position:
+      x: 14
+      y: 480
+  - kind: Service
+    name: magmalte
+    plugin: kubernetes-service
+    position:
+      x: 606
+      y: 520
+  - kind: Service
+    name: mariadb
+    plugin: kubernetes-service
+    position:
+      x: 1255
+      y: 40
+  - kind: Service
+    name: nginx-proxy
+    plugin: kubernetes-service
+    position:
+      x: 754
+      y: 1000
+  - kind: Service
+    name: orc8r-clientcert-legacy
+    plugin: kubernetes-service
+    position:
+      x: 14
+      y: 680
+  - kind: Service
+    name: orc8r-configmanager
+    plugin: kubernetes-service
+    position:
+      x: 2037
+      y: 960
+  - kind: Service
+    name: orc8r-controller
+    plugin: kubernetes-service
+    position:
+      x: 2768
+      y: 320
+  - kind: Service
+    name: orc8r-grafana
+    plugin: kubernetes-service
+    position:
+      x: 1207
+      y: 560
+  - kind: Service
+    name: orc8r-prometheus
+    plugin: kubernetes-service
+    position:
+      x: 1486
+      y: 960
+  - kind: Service
+    name: orc8r-prometheus-cache
+    plugin: kubernetes-service
+    position:
+      x: 1275
+      y: 760
+  - kind: Service
+    name: orc8r-proxy
+    plugin: kubernetes-service
+    position:
+      x: 14
+      y: 240
+  - kind: Service
+    name: postgresql
+    plugin: kubernetes-service
+    position:
+      x: 747
+      y: 720
+  - kind: Service
+    name: postgresql-headless
+    plugin: kubernetes-service
+    position:
+      x: 108
+      y: 880
+  - kind: StatefulSet
+    name: postgresql
+    plugin: kubernetes-stateful-set
+    position:
+      x: 435
+      y: 720
+  - kind: StatefulSet
+    name: release-name-mariadb
+    plugin: kubernetes-stateful-set
+    position:
+      x: 942
+      y: 40
+version: '1'

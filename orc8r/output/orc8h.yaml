@@ -1,0 +1,1809 @@
+apiVersion: v1
+data:
+  nginx_proxy_ssl.conf: |
+    server {
+      listen 443;
+      ssl on;
+      ssl_certificate /etc/nginx/conf.d/nms_nginx.pem;
+      ssl_certificate_key /etc/nginx/conf.d/nms_nginx.key.pem;
+      location / {
+         proxy_pass http://magmalte:8081;
+      }
+    }
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/component: nginx
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/managed-by: helm
+    app.kubernetes.io/name: nms
+    app.kubernetes.io/part-of: magma
+    release_group: release-name
+  name: nginx-proxy-etc
+  namespace: default
+---
+apiVersion: v1
+data:
+  fluent.conf: |-
+    @include /fluentd/etc/kubernetes.conf
+    @include /fluentd/etc/systemd.conf
+    @include /fluentd/etc/output.conf
+  kubernetes.conf: >-
+    <match fluent.**>
+      @type null
+    </match>
+
+
+    <source>
+      @type tail
+      @id in_tail_container_logs
+      path /var/log/containers/*.log
+      pos_file /var/log/fluentd-containers.log.pos
+      tag kubernetes.*
+      read_from_head true
+      <parse>
+        @type "#{ENV['FLUENT_CONTAINER_TAIL_PARSER_TYPE'] || 'json'}"
+        time_format %Y-%m-%dT%H:%M:%S.%NZ
+      </parse>
+    </source>
+
+
+    <source>
+      @type tail
+      @id in_tail_minion
+      path /var/log/salt/minion
+      pos_file /var/log/fluentd-salt.pos
+      tag salt
+      <parse>
+        @type regexp
+        expression /^(?<time>[^ ]* [^ ,]*)[^\[]*\[[^\]]*\]\[(?<severity>[^ \]]*) *\] (?<message>.*)$/
+        time_format %Y-%m-%d %H:%M:%S
+      </parse>
+    </source>
+
+
+    <source>
+      @type tail
+      @id in_tail_startupscript
+      path /var/log/startupscript.log
+      pos_file /var/log/fluentd-startupscript.log.pos
+      tag startupscript
+      <parse>
+        @type syslog
+      </parse>
+    </source>
+
+
+    <source>
+      @type tail
+      @id in_tail_docker
+      path /var/log/docker.log
+      pos_file /var/log/fluentd-docker.log.pos
+      tag docker
+      <parse>
+        @type regexp
+        expression /^time="(?<time>[^)]*)" level=(?<severity>[^ ]*) msg="(?<message>[^"]*)"( err="(?<error>[^"]*)")?( statusCode=($<status_code>\d+))?/
+      </parse>
+    </source>
+
+
+    <source>
+      @type tail
+      @id in_tail_etcd
+      path /var/log/etcd.log
+      pos_file /var/log/fluentd-etcd.log.pos
+      tag etcd
+      <parse>
+        @type none
+      </parse>
+    </source>
+
+
+    <source>
+      @type tail
+      @id in_tail_kubelet
+      multiline_flush_interval 5s
+      path /var/log/kubelet.log
+      pos_file /var/log/fluentd-kubelet.log.pos
+      tag kubelet
+      <parse>
+        @type kubernetes
+      </parse>
+    </source>
+
+
+    <source>
+      @type tail
+      @id in_tail_kube_proxy
+      multiline_flush_interval 5s
+      path /var/log/kube-proxy.log
+      pos_file /var/log/fluentd-kube-proxy.log.pos
+      tag kube-proxy
+      <parse>
+        @type kubernetes
+      </parse>
+    </source>
+
+
+    <source>
+      @type tail
+      @id in_tail_kube_apiserver
+      multiline_flush_interval 5s
+      path /var/log/kube-apiserver.log
+      pos_file /var/log/fluentd-kube-apiserver.log.pos
+      tag kube-apiserver
+      <parse>
+        @type kubernetes
+      </parse>
+    </source>
+
+
+    <source>
+      @type tail
+      @id in_tail_kube_controller_manager
+      multiline_flush_interval 5s
+      path /var/log/kube-controller-manager.log
+      pos_file /var/log/fluentd-kube-controller-manager.log.pos
+      tag kube-controller-manager
+      <parse>
+        @type kubernetes
+      </parse>
+    </source>
+
+
+    <source>
+      @type tail
+      @id in_tail_kube_scheduler
+      multiline_flush_interval 5s
+      path /var/log/kube-scheduler.log
+      pos_file /var/log/fluentd-kube-scheduler.log.pos
+      tag kube-scheduler
+      <parse>
+        @type kubernetes
+      </parse>
+    </source>
+
+
+    <source>
+      @type tail
+      @id in_tail_rescheduler
+      multiline_flush_interval 5s
+      path /var/log/rescheduler.log
+      pos_file /var/log/fluentd-rescheduler.log.pos
+      tag rescheduler
+      <parse>
+        @type kubernetes
+      </parse>
+    </source>
+
+
+    <source>
+      @type tail
+      @id in_tail_glbc
+      multiline_flush_interval 5s
+      path /var/log/glbc.log
+      pos_file /var/log/fluentd-glbc.log.pos
+      tag glbc
+      <parse>
+        @type kubernetes
+      </parse>
+    </source>
+
+
+    <source>
+      @type tail
+      @id in_tail_cluster_autoscaler
+      multiline_flush_interval 5s
+      path /var/log/cluster-autoscaler.log
+      pos_file /var/log/fluentd-cluster-autoscaler.log.pos
+      tag cluster-autoscaler
+      <parse>
+        @type kubernetes
+      </parse>
+    </source>
+
+
+    # Example:
+
+    # 2017-02-09T00:15:57.992775796Z AUDIT:
+    id="90c73c7c-97d6-4b65-9461-f94606ff825f" ip="104.132.1.72" method="GET"
+    user="kubecfg" as="<self>" asgroups="<lookup>" namespace="default"
+    uri="/api/v1/namespaces/default/pods"
+
+    # 2017-02-09T00:15:57.993528822Z AUDIT:
+    id="90c73c7c-97d6-4b65-9461-f94606ff825f" response="200"
+
+    <source>
+      @type tail
+      @id in_tail_kube_apiserver_audit
+      multiline_flush_interval 5s
+      path /var/log/kubernetes/kube-apiserver-audit.log
+      pos_file /var/log/kube-apiserver-audit.log.pos
+      tag kube-apiserver-audit
+      <parse>
+        @type multiline
+        format_firstline /^\S+\s+AUDIT:/
+        # Fields must be explicitly captured by name to be parsed into the record.
+        # Fields may not always be present, and order may change, so this just looks
+        # for a list of key="\"quoted\" value" pairs separated by spaces.
+        # Unknown fields are ignored.
+        # Note: We can't separate query/response lines as format1/format2 because
+        #       they don't always come one after the other for a given query.
+        format1 /^(?<time>\S+) AUDIT:(?: (?:id="(?<id>(?:[^"\\]|\\.)*)"|ip="(?<ip>(?:[^"\\]|\\.)*)"|method="(?<method>(?:[^"\\]|\\.)*)"|user="(?<user>(?:[^"\\]|\\.)*)"|groups="(?<groups>(?:[^"\\]|\\.)*)"|as="(?<as>(?:[^"\\]|\\.)*)"|asgroups="(?<asgroups>(?:[^"\\]|\\.)*)"|namespace="(?<namespace>(?:[^"\\]|\\.)*)"|uri="(?<uri>(?:[^"\\]|\\.)*)"|response="(?<response>(?:[^"\\]|\\.)*)"|\w+="(?:[^"\\]|\\.)*"))*/
+        time_format %Y-%m-%dT%T.%L%Z
+      </parse>
+    </source>
+
+
+    <filter kubernetes.**orc8r-proxy**>
+      @type parser
+      key_name log
+
+      <parse>
+        @type multi_format
+
+        <pattern>
+          format regexp
+          expression /^(?<time>.*)@\|@(?<remote_addr>.*)@\|@(?<http_host>.*)@\|@(?<server_port>.*)@\|@(?<request>.*)@\|@(?<status>.*)@\|@(?<body_bytes_sent>.*)@\|@(?<request_time>.*)@\|@(?<alpn>.*)@\|@(?<tls_client_serial>.*)@\|@(?<tls_client_subject_name>.*)@\|@(?<tls_session_reused>.*)@\|@(?<tls_sni>.*)@\|@(?<tls_protocol>.*)@\|@(?<tls_cipher>.*)@\|@(?<backend_host>.*)@\|@(?<backend_port>.*)$/
+          time_format %iso8601
+        </pattern>
+
+        <pattern>
+          format none
+        </pattern>
+      </parse>
+    </filter>
+
+
+    <filter kubernetes.**>
+      @type kubernetes_metadata
+      @id filter_kube_metadata
+    </filter>
+  output.conf: |-
+    <match **>
+      @type elasticsearch
+      @id out_es
+      @log_level info
+      include_tag_key true
+      host "#{ENV['FLUENT_ELASTICSEARCH_HOST']}"
+      port "#{ENV['FLUENT_ELASTICSEARCH_PORT']}"
+      scheme "#{ENV['FLUENT_ELASTICSEARCH_SCHEME'] || 'https'}"
+      ssl_verify "#{ENV['FLUENT_ELASTICSEARCH_SSL_VERIFY'] || 'false'}"
+      ssl_version "#{ENV['FLUENT_ELASTICSEARCH_SSL_VERSION'] || 'TLSv1'}"
+      reload_connections "#{ENV['FLUENT_ELASTICSEARCH_RELOAD_CONNECTIONS'] || 'false'}"
+      reconnect_on_error "#{ENV['FLUENT_ELASTICSEARCH_RECONNECT_ON_ERROR'] || 'true'}"
+      reload_on_failure "#{ENV['FLUENT_ELASTICSEARCH_RELOAD_ON_FAILURE'] || 'true'}"
+      log_es_400_reason "#{ENV['FLUENT_ELASTICSEARCH_LOG_ES_400_REASON'] || 'false'}"
+      logstash_prefix "#{ENV['FLUENT_ELASTICSEARCH_LOGSTASH_PREFIX'] || 'logstash'}"
+      logstash_format "#{ENV['FLUENT_ELASTICSEARCH_LOGSTASH_FORMAT'] || 'true'}"
+      index_name "#{ENV['FLUENT_ELASTICSEARCH_LOGSTASH_INDEX_NAME'] || 'logstash'}"
+      type_name "#{ENV['FLUENT_ELASTICSEARCH_LOGSTASH_TYPE_NAME'] || 'fluentd'}"
+      <buffer>
+        flush_thread_count "#{ENV['FLUENT_ELASTICSEARCH_BUFFER_FLUSH_THREAD_COUNT'] || '8'}"
+        flush_interval "#{ENV['FLUENT_ELASTICSEARCH_BUFFER_FLUSH_INTERVAL'] || '5s'}"
+        chunk_limit_size "#{ENV['FLUENT_ELASTICSEARCH_BUFFER_CHUNK_LIMIT_SIZE'] || '2M'}"
+        queue_limit_length "#{ENV['FLUENT_ELASTICSEARCH_BUFFER_QUEUE_LIMIT_LENGTH'] || '32'}"
+        retry_max_interval "#{ENV['FLUENT_ELASTICSEARCH_BUFFER_RETRY_MAX_INTERVAL'] || '30'}"
+        retry_forever true
+      </buffer>
+    </match>
+  systemd.conf: |-
+    # Logs from systemd-journal for interesting services.
+    <source>
+      @type systemd
+      @id in_systemd_kubelet
+      matches [{ "_SYSTEMD_UNIT": "kubelet.service" }]
+      <storage>
+        @type local
+        persistent true
+        path /var/log/fluentd-journald-kubelet-cursor.json
+      </storage>
+      <entry>
+        fields_strip_underscores true
+      </entry>
+      read_from_head true
+      tag kubelet
+    </source>
+
+    # Logs from docker-systemd
+    <source>
+      @type systemd
+      @id in_systemd_docker
+      matches [{ "_SYSTEMD_UNIT": "docker.service" }]
+      <storage>
+        @type local
+        persistent true
+        path /var/log/fluentd-journald-docker-cursor.json
+      </storage>
+      <entry>
+        fields_strip_underscores true
+      </entry>
+      read_from_head true
+      tag docker.systemd
+    </source>
+
+    # Logs from systemd-journal for interesting services.
+    <source>
+      @type systemd
+      @id in_systemd_bootkube
+      matches [{ "_SYSTEMD_UNIT": "bootkube.service" }]
+      <storage>
+        @type local
+        persistent true
+        path /var/log/fluentd-journald-bootkube-cursor.json
+      </storage>
+      <entry>
+        fields_strip_underscores true
+      </entry>
+      read_from_head true
+      tag bootkube
+    </source>
+kind: ConfigMap
+metadata:
+  labels:
+    addonmanager.kubernetes.io/mode: Reconcile
+  name: orc8r-fluentd-es-configs
+  namespace: default
+---
+apiVersion: v1
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval:     15s # By default, scrape targets every 15 seconds.
+      evaluation_interval: 15s # By default, scrape targets every 15 seconds.
+      external_labels:
+        monitor: 'master'
+
+    scrape_configs:
+      - job_name: 'prometheus'
+        static_configs:
+          - targets: ['localhost:9090']
+
+      - job_name: "magma_pushgateway"
+        honor_labels: true
+        metric_relabel_configs:
+          - regex: 'job'
+            action: labeldrop
+          - regex: 'instance'
+            action: labeldrop
+        static_configs:
+          - targets: ['orc8r-prometheus-cache:9091']
+
+    rule_files:
+      - '/etc/prometheus/alert_rules/*_rules.yml'
+
+
+    alerting:
+      alertmanagers:
+        - scheme: http
+          static_configs:
+            - targets: ['orc8r-alertmanager:9093']
+kind: ConfigMap
+metadata:
+  name: prometheus-config-file
+---
+apiVersion: v1
+data:
+  my.cnf: |-
+    [mysqld]
+    skip-name-resolve
+    explicit_defaults_for_timestamp
+    basedir=/opt/bitnami/mariadb
+    plugin_dir=/opt/bitnami/mariadb/plugin
+    port=3306
+    socket=/opt/bitnami/mariadb/tmp/mysql.sock
+    tmpdir=/opt/bitnami/mariadb/tmp
+    max_allowed_packet=16M
+    bind-address=0.0.0.0
+    pid-file=/opt/bitnami/mariadb/tmp/mysqld.pid
+    log-error=/opt/bitnami/mariadb/logs/mysqld.log
+    character-set-server=UTF8
+    collation-server=utf8_general_ci
+
+    [client]
+    port=3306
+    socket=/opt/bitnami/mariadb/tmp/mysql.sock
+    default-character-set=UTF8
+    plugin_dir=/opt/bitnami/mariadb/plugin
+
+    [manager]
+    port=3306
+    socket=/opt/bitnami/mariadb/tmp/mysql.sock
+    pid-file=/opt/bitnami/mariadb/tmp/mysqld.pid
+kind: ConfigMap
+metadata:
+  labels:
+    app: mariadb
+    chart: mariadb-7.3.12
+    component: master
+    heritage: Tiller
+    release: release-name
+  name: release-name-mariadb
+---
+apiVersion: v1
+data:
+  run.sh: |-
+    @test "Testing MariaDB is accessible" {
+      mysql -h release-name-mariadb -uroot -p$MARIADB_ROOT_PASSWORD -e 'show databases;'
+    }
+kind: ConfigMap
+metadata:
+  name: release-name-mariadb-tests
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/component: magmalte
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/managed-by: helm
+    app.kubernetes.io/name: nms
+    app.kubernetes.io/part-of: magma
+    release_group: release-name
+  name: nms-magmalte
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: magmalte
+      app.kubernetes.io/instance: release-name
+      app.kubernetes.io/name: nms
+      release_group: release-name
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: magmalte
+        app.kubernetes.io/instance: release-name
+        app.kubernetes.io/name: nms
+        release_group: release-name
+    spec:
+      containers:
+        - args:
+            - yarn
+            - run
+            - 'start:dev'
+          env:
+            - name: API_CERT_FILENAME
+              value: /usr/src/fbcnms-projects/magmalte/certs/admin_operator.pem
+            - name: API_PRIVATE_KEY_FILENAME
+              value: /usr/src/fbcnms-projects/magmalte/certs/admin_operator.key.pem
+            - name: API_HOST
+              value: 'orc8r-proxy:9443'
+            - name: HOST
+              value: 0.0.0.0
+            - name: PORT
+              value: '8081'
+            - name: MAPBOX_ACCESS_TOKEN
+              value: ''
+            - name: MYSQL_DB
+              value: magma
+            - name: MYSQL_HOST
+              value: mariadb
+            - name: MYSQL_PASS
+              valueFrom:
+                secretKeyRef:
+                  key: MYSQL_PASS
+                  name: magmalte-mysql-secrets
+            - name: MYSQL_USER
+              valueFrom:
+                secretKeyRef:
+                  key: MYSQL_USER
+                  name: magmalte-mysql-secrets
+          image: 'fjvicens/magmalte:latest'
+          imagePullPolicy: Always
+          lifecycle:
+            postStart:
+              exec:
+                command:
+                  - /bin/sh
+                  - '-c'
+                  - >-
+                    screen -dmS config '/bin/sleep 120; yarn setAdminPassword
+                    osm@etsi.org magma'
+          livenessProbe:
+            exec:
+              command:
+                - curl
+                - 'http://localhost:8081/healthz'
+            initialDelaySeconds: 60
+          name: nms
+          ports:
+            - containerPort: 8081
+          volumeMounts:
+            - mountPath: /usr/src/fbcnms-projects/magmalte/certs/admin_operator.pem
+              name: orc8r-secrets-certs
+              subPath: admin_operator.pem
+            - mountPath: /usr/src/fbcnms-projects/magmalte/certs/admin_operator.key.pem
+              name: orc8r-secrets-certs
+              subPath: admin_operator.key.pem
+      serviceAccountName: release-name
+      terminationGracePeriodSeconds: 60
+      volumes:
+        - name: orc8r-secrets-certs
+          secret:
+            defaultMode: 292
+            secretName: orc8r-secrets-certs
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/component: nginx
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/managed-by: helm
+    app.kubernetes.io/name: nms
+    app.kubernetes.io/part-of: magma
+    release_group: release-name
+  name: nms-nginx-proxy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: nginx
+      app.kubernetes.io/instance: release-name
+      app.kubernetes.io/name: nms
+      release_group: release-name
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: nginx
+        app.kubernetes.io/instance: release-name
+        app.kubernetes.io/name: nms
+        release_group: release-name
+    spec:
+      containers:
+        - image: 'nginx:latest'
+          imagePullPolicy: Always
+          name: nms
+          ports:
+            - containerPort: 443
+          volumeMounts:
+            - mountPath: /etc/nginx/conf.d/nginx_proxy_ssl.conf
+              name: nginx-proxy-etc
+              subPath: nginx_proxy_ssl.conf
+            - mountPath: /etc/nginx/conf.d/nms_nginx.pem
+              name: orc8r-secrets-certs
+              readOnly: true
+              subPath: controller.crt
+            - mountPath: /etc/nginx/conf.d/nms_nginx.key.pem
+              name: orc8r-secrets-certs
+              readOnly: true
+              subPath: controller.key
+      restartPolicy: Always
+      serviceAccountName: release-name
+      terminationGracePeriodSeconds: 60
+      volumes:
+        - configMap:
+            defaultMode: 365
+            name: nginx-proxy-etc
+          name: nginx-proxy-etc
+        - name: orc8r-secrets-certs
+          secret:
+            defaultMode: 292
+            secretName: orc8r-secrets-certs
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/component: configmanager
+    app.kubernetes.io/instance: orc8r
+    app.kubernetes.io/managed-by: Tiller
+    app.kubernetes.io/name: metrics
+    app.kubernetes.io/version: '1.0'
+    helm.sh/chart: metrics-0.1.1
+  name: orc8r-configmanager
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: configmanager
+      app.kubernetes.io/instance: orc8r
+      app.kubernetes.io/name: metrics
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: configmanager
+        app.kubernetes.io/instance: orc8r
+        app.kubernetes.io/name: metrics
+    spec:
+      affinity:
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: app.kubernetes.io/component
+                    operator: In
+                    values:
+                      - prometheus
+              topologyKey: kubernetes.io/hostname
+      containers:
+        - env:
+            - name: PROM_ALERTCONFIG_PORT
+              value: '9100'
+            - name: RULES_DIR
+              value: /etc/configs/alert_rules
+            - name: PROMETHEUS_URL
+              value: 'orc8r-prometheus:9090'
+            - name: ALERTMANAGER_CONFIG_PORT
+              value: '9101'
+            - name: ALERTMANAGER_CONF_PATH
+              value: /etc/configs/alertmanager.yml
+            - name: ALERTMANAGER_URL
+              value: 'orc8r-alertmanager:9093'
+          image: 'fjvicens/orc8r_config-manager:latest'
+          imagePullPolicy: IfNotPresent
+          name: config-manager
+          ports:
+            - containerPort: 9100
+            - containerPort: 9101
+          resources: {}
+          volumeMounts:
+            - mountPath: /etc/configs
+              name: prometheus-config
+      volumes:
+        - emptyDir: {}
+          name: prometheus-config
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/component: controller
+    app.kubernetes.io/instance: orc8r
+    app.kubernetes.io/managed-by: helm
+    app.kubernetes.io/name: orc8r
+    app.kubernetes.io/part-of: magma
+    helm.sh/chart: orc8r-0.1.3
+  name: orc8r-controller
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: controller
+      app.kubernetes.io/instance: orc8r
+      app.kubernetes.io/name: orc8r
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: controller
+        app.kubernetes.io/instance: orc8r
+        app.kubernetes.io/name: orc8r
+    spec:
+      containers:
+        - env:
+            - name: DATABASE_SOURCE
+              valueFrom:
+                secretKeyRef:
+                  key: postgres.connstr
+                  name: orc8r-controller
+            - name: SQL_DRIVER
+              value: postgres
+            - name: SQL_DIALECT
+              value: psql
+            - name: SERVICE_HOST_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: HOST_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: USE_NEW_HANDLERS
+              value: '0'
+            - name: USE_NEW_MCONFIGS
+              value: '0'
+            - name: NEW_MCONFIGS_WHITELIST
+              value: null
+          image: 'fjvicens/orc8r_controller:latest'
+          imagePullPolicy: IfNotPresent
+          lifecycle:
+            postStart:
+              exec:
+                command:
+                  - /bin/sh
+                  - '-c'
+                  - >-
+                    /usr/local/bin/wait-for-it.sh -s -t 30 postgresql:5432 &&
+                    /var/opt/magma/bin/accessc add-existing -admin -cert
+                    /var/opt/magma/certs/admin_operator.pem admin_operator
+          livenessProbe:
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            tcpSocket:
+              port: 9081
+          name: orc8r-controller
+          ports:
+            - containerPort: 8080
+            - containerPort: 9079
+            - containerPort: 9080
+            - containerPort: 9081
+            - containerPort: 9082
+            - containerPort: 9083
+            - containerPort: 9084
+            - containerPort: 9085
+            - containerPort: 9086
+            - containerPort: 9087
+            - containerPort: 9088
+            - containerPort: 9089
+            - containerPort: 9090
+            - containerPort: 9091
+            - containerPort: 9092
+            - containerPort: 9093
+            - containerPort: 9094
+            - containerPort: 9095
+            - containerPort: 9096
+            - containerPort: 9097
+            - containerPort: 9098
+            - containerPort: 9099
+            - containerPort: 9100
+            - containerPort: 9101
+            - containerPort: 9102
+            - containerPort: 9103
+            - containerPort: 9104
+            - containerPort: 9105
+            - containerPort: 9106
+            - containerPort: 9107
+            - containerPort: 9108
+          readinessProbe:
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            tcpSocket:
+              port: 9081
+          resources: {}
+          volumeMounts:
+            - mountPath: /var/opt/magma/certs
+              name: certs
+              readOnly: true
+            - mountPath: /var/opt/magma/envdir
+              name: envdir
+              readOnly: true
+            - mountPath: /var/opt/magma/configs/orc8r
+              name: orc8r-secrets-configs-orc8r
+              readOnly: true
+      volumes:
+        - name: certs
+          secret:
+            secretName: orc8r-secrets-certs
+        - name: envdir
+          secret:
+            secretName: orc8r-secrets-envdir
+        - name: orc8r-secrets-configs-orc8r
+          secret:
+            secretName: orc8r-secrets-configs-orc8r
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/component: grafana
+    app.kubernetes.io/instance: orc8r
+    app.kubernetes.io/managed-by: Tiller
+    app.kubernetes.io/name: metrics
+    app.kubernetes.io/version: '1.0'
+    helm.sh/chart: metrics-0.1.1
+  name: orc8r-grafana
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: grafana
+      app.kubernetes.io/instance: orc8r
+      app.kubernetes.io/name: metrics
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: grafana
+        app.kubernetes.io/instance: orc8r
+        app.kubernetes.io/name: metrics
+    spec:
+      containers:
+        - env:
+            - name: PROMETHEUS_HOST
+              value: orc8r-prometheus
+            - name: PROMETHEUS_PORT
+              value: '9090'
+          image: 'fjvicens/orc8r_grafana:latest'
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          name: grafana
+          ports:
+            - containerPort: 3000
+          resources: {}
+          volumeMounts:
+            - mountPath: /var/lib/grafana
+              name: grafana-data
+      initContainers:
+        - command:
+            - sh
+            - '-c'
+            - chmod -R 777 /grafanaData
+          image: busybox
+          name: volume-mount
+          volumeMounts:
+            - mountPath: /grafanaData
+              name: grafana-data
+      volumes:
+        - emptyDir: {}
+          name: grafana-data
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/component: prometheus
+    app.kubernetes.io/instance: orc8r
+    app.kubernetes.io/managed-by: Tiller
+    app.kubernetes.io/name: metrics
+    app.kubernetes.io/version: '1.0'
+    helm.sh/chart: metrics-0.1.1
+  name: orc8r-prometheus
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: prometheus
+      app.kubernetes.io/instance: orc8r
+      app.kubernetes.io/name: metrics
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: prometheus
+        app.kubernetes.io/instance: orc8r
+        app.kubernetes.io/name: metrics
+    spec:
+      containers:
+        - args:
+            - '--config.file=/prometheus/prometheus.yml'
+            - '--storage.tsdb.retention.time=30d'
+            - '--storage.tsdb.path=/data'
+            - '--web.enable-lifecycle'
+          image: 'docker.io/prom/prometheus:v2.12.0'
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            httpGet:
+              path: /graph
+              port: 9090
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          name: prometheus
+          ports:
+            - containerPort: 9090
+          resources: {}
+          volumeMounts:
+            - mountPath: /etc/prometheus
+              name: prometheus-config
+              readOnly: true
+            - mountPath: /data
+              name: prometheus-data
+            - mountPath: /prometheus
+              name: prometheus-config-file
+      volumes:
+        - emptyDir: {}
+          name: prometheus-config
+        - emptyDir: {}
+          name: prometheus-data
+        - configMap:
+            name: prometheus-config-file
+          name: prometheus-config-file
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/component: prometheus-cache
+    app.kubernetes.io/instance: orc8r
+    app.kubernetes.io/managed-by: Tiller
+    app.kubernetes.io/name: metrics
+    app.kubernetes.io/version: '1.0'
+    helm.sh/chart: metrics-0.1.1
+  name: orc8r-prometheus-cache
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: prometheus-cache
+      app.kubernetes.io/instance: orc8r
+      app.kubernetes.io/name: metrics
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: prometheus-cache
+        app.kubernetes.io/instance: orc8r
+        app.kubernetes.io/name: metrics
+    spec:
+      containers:
+        - args:
+            - '-limit=0'
+          image: 'fjvicens/orc8r_prometheus-cache:latest'
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 9091
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          name: prometheus-cache
+          ports:
+            - containerPort: 9091
+          resources: {}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app.kubernetes.io/component: proxy
+    app.kubernetes.io/instance: orc8r
+    app.kubernetes.io/managed-by: helm
+    app.kubernetes.io/name: orc8r
+    app.kubernetes.io/part-of: magma
+    helm.sh/chart: orc8r-0.1.3
+  name: orc8r-proxy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: proxy
+      app.kubernetes.io/instance: orc8r
+      app.kubernetes.io/name: orc8r
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: proxy
+        app.kubernetes.io/instance: orc8r
+        app.kubernetes.io/name: orc8r
+    spec:
+      containers:
+        - env:
+            - name: PROXY_BACKENDS
+              value: orc8r-controller
+            - name: CONTROLLER_HOSTNAME
+              value: controller.magma.test
+            - name: HTTP_PROXY_HOSTNAME
+              value: null
+            - name: HTTP_PROXY_BACKEND
+              value: orc8r-controller
+            - name: HTTP_PROXY_DOCKER_HOSTNAME
+              value: null
+            - name: HTTP_PROXY_GITHUB_HOSTNAME
+              value: null
+            - name: HOST_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+          image: 'fjvicens/orc8r_proxy:latest'
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            tcpSocket:
+              port: clientcert
+          name: orc8r-proxy
+          ports:
+            - containerPort: 9443
+              name: clientcert
+            - containerPort: 9444
+              name: open
+          readinessProbe:
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            tcpSocket:
+              port: clientcert
+          resources: {}
+          volumeMounts:
+            - mountPath: /var/opt/magma/certs
+              name: certs
+              readOnly: true
+            - mountPath: /var/opt/magma/envdir
+              name: envdir
+              readOnly: true
+      volumes:
+        - name: certs
+          secret:
+            secretName: orc8r-secrets-certs
+        - name: envdir
+          secret:
+            secretName: orc8r-secrets-envdir
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  annotations:
+    helm.sh/hook: test-success
+  name: release-name-mariadb-test-mhow6
+spec:
+  containers:
+    - command:
+        - /tools/bats/bats
+        - '-t'
+        - /tests/run.sh
+      env:
+        - name: MARIADB_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: mariadb-root-password
+              name: release-name-mariadb
+      image: 'docker.io/bitnami/mariadb:10.3.22-debian-10-r27'
+      imagePullPolicy: IfNotPresent
+      name: mariadb-test
+      volumeMounts:
+        - mountPath: /tests
+          name: tests
+          readOnly: true
+        - mountPath: /tools
+          name: tools
+  initContainers:
+    - command:
+        - bash
+        - '-c'
+        - |
+          set -ex
+          # copy bats to tools dir
+          cp -R /usr/local/libexec/ /tools/bats/
+      image: 'docker.io/dduportal/bats:0.4.0'
+      name: test-framework
+      volumeMounts:
+        - mountPath: /tools
+          name: tools
+  restartPolicy: Never
+  volumes:
+    - configMap:
+        name: release-name-mariadb-tests
+      name: tests
+    - emptyDir: {}
+      name: tools
+---
+apiVersion: v1
+data:
+  MYSQL_PASS: cGFzc3dvcmQ=
+  MYSQL_USER: bWFnbWE=
+kind: Secret
+metadata:
+  labels:
+    app.kubernetes.io/component: magmalte
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/managed-by: helm
+    app.kubernetes.io/name: nms
+    app.kubernetes.io/part-of: magma
+    release_group: release-name
+  name: magmalte-mysql-secrets
+  namespace: default
+type: Opaque
+---
+apiVersion: v1
+data:
+  postgres.connstr: >-
+    ZGJuYW1lPW1hZ21hIHVzZXI9cG9zdGdyZXMgcGFzc3dvcmQ9cG9zdGdyZXMgaG9zdD1wb3N0Z3Jlc3FsIHBvcnQ9NTQzMiBzc2xtb2RlPWRpc2FibGU=
+kind: Secret
+metadata:
+  labels:
+    app.kubernetes.io/component: controller
+    app.kubernetes.io/instance: orc8r
+    app.kubernetes.io/managed-by: helm
+    app.kubernetes.io/name: orc8r
+    app.kubernetes.io/part-of: magma
+    helm.sh/chart: orc8r-0.1.3
+  name: orc8r-controller
+type: Opaque
+---
+apiVersion: v1
+data:
+  admin_operator.key.pem: >-
+    LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNSUlFb3dJQkFBS0NBUUVBdERyNW9xT0pvcEdQRCtpZnZIT0dJSFNTVjZwNVpCSHU2UHRtdm00UEZqajJHUDBBCm5WRFA0RWdnWksvUnVWTnEyOGtyNi9ycTB1dTRocDVWV1EzNi9oV0ZRRGkwdUppMmVxVGo5TnVsSEdyUG50N20KN0FwRlM1MFNrcFNyb2ZVUUJHK1VZa3VqS0pyUUZMOGRJSjdzSkZMQ3Ixb0dZTU4yRW5jNDA4Y09DME5YbTV1cgpUSHY5eHlwVk94c2srZTAzVTFKOGNOSmVlbEYzK2o3TG5BTk5NVmJhbVVRaUJNRVJIR29KOWRlcStaQjdKbVRrClpGT2FwcGREYjJYZHJmRmV6bEs5eEhJc05FM1k5QXErWEJKbGRCVkQ4eDRidG51SkFjdHZJaS96OGN4Y0ZmQ3AKMWdGODVKNHlQdUhDU0FmWUYxS2FuanYybitCVXBLYkliVEN4YlFJREFRQUJBb0lCQUhJUnpZUHhhNkEzN2tzTQpXV1ZGM01OWDVIT1YwdVRTTU5yR214MjF2Tmk4em8yOE81SlYzbXUrV3JvL1NVYTVsQzF0SXQ1bFhoQ0czckJkCkwvbUFUclpYMnBGdUVudXZNL2RsdTExelV3b3NWQ0hpUkZkcW5MY2h2K3FFTENrQ1dOUGw1dzFiZi9Xb0hrQ3oKUVBVdmdKZnd4WVdFUGZzcVd1V1BEYW1FRjlCcUMraXpDU1RHd25wdVpITHRsL0x5ajVOdzVvVEpNanF4YTVnbQo2eEFwdEt6T1NDWEpDMjhHSFlMNEtYMjh3TCsyOEtnQndkL25qQ1JLNTFVU3VkOVpUQnBnSUpjN3NFYkUwa3lBCmNmdE5VdVc2aG9Jd0I5WGxCUmhlcm5xeVJRL2x3b1lQTnNFOGZJV0htRGdBczlvNStObU1saTZTdXRaMFNTYWEKTTlZOUpvRUNnWUVBMG9CV05zZnZnZElWN3NuREwwNmpjZjFhY0EwTEN4NUxGZFFHVlNzbmdxOXArTmhDNWNVNQpLYzJiTFpUcFhVVVdzM0dUVUJ3Sk9HSFhGOGdFTDdxNXY1S3RDUUl4U01qa1F1N2IydmdOV2pPaDdPYlV2ejJUCkF2c3RYdGxrbVNRd2x5Lzg5Z1RzMEIxUlpwRkFyRGxBNnp2UHFFT2l2ZTRSdGdIN2JROUtBczBDZ1lFQTJ5K28KTjV3RlRUOTgyS00ySWYzWjhOalRuZFNDSFcvcG9pVzJHQzJ4T3poTHlTNy9WdGtqS2daQ3RYVzhCLzl3dGlFZQphemszWjhHYkdVNGpFcmR2cWxIUERSbUZYaE0zZzRpaHRpaStibUlDbXNFZmdwYjcvdUVzclNBOEh3RHFiUlN5CjR5aGwycVFia0pMTGRObk9PMjcvQzNEM05aQjNYeFExc2U0QnFTRUNnWUF4VnJWZWQ3UnlxRXhOd09ySDd0V3UKaFNTcWVOUXEwZm5sYnVIaEdwRlROMHhPY0ZvVnd3bG4rL0l3VitQdTRaKzFoWnh5dlcrSDBKNzZ5djM0TmZzTgpwUko3dHhEWUw0WVpEaVZvQ0pZUW0yT0x4SHIvTEM2R0YxdUdETXhnZkxRSzY4dU4ybytySkFRTlYyUmlPYlUyCnJiazVoa2poM2FnM0VmWGRsU1RTelFLQmdRQytGU2RhQ3BsaWM1T093SVFhbUc1Ziszb1IzeEJ6L1BEdGFLengKYlBiTmQ3WHBwRE5XR3ZydTMvME1KeTFJOWxMRjhCVFVRZ3QxbEtZd0hONDN4aE0xN3JxVURyVGxiOTd0MkJqOQp3M25hZW03dHpGdktRYXdLVHpjU2NPa1NyaFdmUVpzZGVwUlNONDJjSkdJRFZUd1B1T1BBQlZpdUFEbzFuMjR0CmYwMjdZUUtCZ0dYWHowR1lEeTE0TTR1LzV3NzlqWTdPeXg5ZTBsbmxtak1wKzRMR2hic3N5RUdyVm1RazJEZzMKMkZaVEIyYmd4TnhaZjJCQ1lXbkV4RTlSd012N0FkbEczN2lJOUVmWHlwUUxESWF3eURrdXlsOFc3cUdoejd2MQp5THJJQks4YW1BWFQ2RVNkQzI4dE93YndtZ2dVSENOdE5rZXpDT3hnTy9SVWJRdnFmK2gyCi0tLS0tRU5EIFJTQSBQUklWQVRFIEtFWS0tLS0tCg==
+  admin_operator.pem: >-
+    LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURTRENDQWpDZ0F3SUJBZ0lRVnJZeUQ1YlBSNUhlblhoUUpyZTEvekFOQmdrcWhraUc5dzBCQVFzRkFEQXMKTVFzd0NRWURWUVFHRXdKVlV6RWRNQnNHQTFVRUF3d1VZMlZ5ZEdsbWFXVnlMbTFoWjIxaExuUmxjM1F3SGhjTgpNakF3TXpBeU1qRTBNakU0V2hjTk1qRXdNekF5TWpJME1qRTRXakE4TVFzd0NRWURWUVFHRXdKVlV6RUpNQWNHCkExVUVDaE1BTVFrd0J3WURWUVFMRXdBeEZ6QVZCZ05WQkFNTURtRmtiV2x1WDI5d1pYSmhkRzl5TUlJQklqQU4KQmdrcWhraUc5dzBCQVFFRkFBT0NBUThBTUlJQkNnS0NBUUVBdERyNW9xT0pvcEdQRCtpZnZIT0dJSFNTVjZwNQpaQkh1NlB0bXZtNFBGamoyR1AwQW5WRFA0RWdnWksvUnVWTnEyOGtyNi9ycTB1dTRocDVWV1EzNi9oV0ZRRGkwCnVKaTJlcVRqOU51bEhHclBudDdtN0FwRlM1MFNrcFNyb2ZVUUJHK1VZa3VqS0pyUUZMOGRJSjdzSkZMQ3Ixb0cKWU1OMkVuYzQwOGNPQzBOWG01dXJUSHY5eHlwVk94c2srZTAzVTFKOGNOSmVlbEYzK2o3TG5BTk5NVmJhbVVRaQpCTUVSSEdvSjlkZXErWkI3Sm1Ua1pGT2FwcGREYjJYZHJmRmV6bEs5eEhJc05FM1k5QXErWEJKbGRCVkQ4eDRiCnRudUpBY3R2SWkvejhjeGNGZkNwMWdGODVKNHlQdUhDU0FmWUYxS2FuanYybitCVXBLYkliVEN4YlFJREFRQUIKbzFZd1ZEQU9CZ05WSFE4QkFmOEVCQU1DQmFBd0V3WURWUjBsQkF3d0NnWUlLd1lCQlFVSEF3SXdEQVlEVlIwVApBUUgvQkFJd0FEQWZCZ05WSFNNRUdEQVdnQlRlZ1BVME4zWHZrWHpOYVFRWHhFNHZnWjhpUHpBTkJna3Foa2lHCjl3MEJBUXNGQUFPQ0FRRUFBMzRsa0hvbDBSZVkrdUNGVk1lTlpYSEpENlRVYnNPR3NhYVNlZXJzQytWQ2xZamIKaFhXVXFVZzZ3aFFFVmF6R1RpcnNYOFBESTZEWmluc3ljTVlheE1xdkptQVVZK0tBVDVLRXNCRDhVQUVLdE9oegpjV3VKVGM2SFUxMTZtSFRiSW54Z0FkRUJlcks2OWJOMjMxNWQ4RU1KMUlIL1RCQWRNSkRiRkhvSzlMbi9XM1VaCmMzWnFmNit4bVNkUmtmbE9UYmtGdHQrZXEwMktDM213V0RJQk00aXptNkM4dXpGWkF2Q2ErUHlRUEpyZ0VXNnoKNHZKbGpRcEdiVGdlSkt0aUFqS1k1QmNxb0kvTUZOdlNYaWhDWXdUQzU0Q2JhZ3lqdjNwN3BGbWF6b2hVekM2TgowZ0RIMnBJcCtWYmFOa2s5SGp4MldRN281THl0US9BQ0IzUzRDUT09Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K
+  admin_operator.pfx: >-
+    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
+  bootstrapper.key: >-
+    LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNSUlFcEFJQkFBS0NBUUVBNGlQekZZcVV2UG1CSDNpNnJXTEdmY25IaEJTZm5FL2QzZ3dic1Y3b0lzMVZRWG5GCmx1ZnUyRlV5ajQ3cEFDWmJFVVRRQjZVbWpEZU10Z3ZzNVhiQjdmNG9XOWRiQUs0Z3NFUmluckJnZS9GS3c4UnkKeGsyRVZVWXplemVmaTJFNW0ydk4yZEhCZ1BqR2l2T0Q3ZHQxR3BJMXd5RHhQYVJwbWZtVHlTb0ZGNW16SzJTZAp3eGlNVG55VUUxaWJNbU03RjRGVHcrN2hQWUtsaTZ5UStpL0hHR3lELzEzaVNuK3FQaCtLenNXRXRlYnZzWEU4Ck5Oa1FqUGxwcm1Jc1JpLzVkeCtiQm04VXlUTm5GakMwLy9DOE9UekkwOFBXY0pNVmo1cFpVUTVxODJRKzJYZW4KWS9rVFpnM3I0dWJlbGpickdmYUxWbzhKNDAzQXpaankwcENuT1FJREFRQUJBb0lCQVFDejFXelpJNVIyMTEvRQp2RWlQMjY0SG1EQU9yQ3ZscldtOXpCazFxMGlsYkc2eEcvcHlzRXl6UXNWcmZuVnlSZzVEcEZwZXlnbm1sY0pUCmZ4Wkx3RzRtS2VqRWFIVVpER0E0YkptVW9xU0h5L0h0enNxTFFsZkxUSUZpS25DNDhYOVRScDZ6Nm1lY2ZibSsKQkR0Vkt5RnNHUHVpQ2c5dU90SXp2VksyTmJGSSt0WFlpbURDYzJKYjZpNHhyS244aWVoajJsS213bnpzdXZsbwo3eWdZNEtKeVN5dW1nU0l1QU1sU3hhTThEZjdVR0VaSzZremZiRTdJWFJFSWIxWkdFai9HcUoxMjVwZFZBWSs3CmZFWE02ZmQyUU01V3ZicXUrZ1hlWG1yWXlNSHQ3MjBZanM4TjlGNnFtU2RrOHZRbVg4QkJqVVp4Q1VKbmlLaE4KdjJtOEtlZTFBb0dCQVBOcTdvdHRIclQ3UlJJVWhiOE9NN0JLb0ZJNi80UW15QzNJeEYvd0lJSHJUTG9ENTNNaQowMlJ5NVZRejNIL1VuWkJ2NXU2cUNNVVY2RWVVUWIvQi84N3UzRkZtbWxadEJQR1QvNmQxaUl1cGVLSTdOOTJzCjFYR0R2Qk1PZmNmb1hRZ2pCT0RETTMxelBXd2FSMEE1em02cUhxeXlxeFIwcG5qcjg4UjJzUXY3QW9HQkFPM1UKWktNcThPUndUdCt1NUJmTlExYUhHRjh5YmJ5aHFsN1VEOW5oVWhUOVdnazdLYTl6NUp0bkhaaUhJTjFNYVphUgp3L09UTUJHRkFndmpMYzVBK3JDT3JSQUNOL2NoWFl3R2FkbG5UQWIzS2J2QzlqWTY3L3JoRkFWUk1LWEN6TTMvCmkyNW1QaktNaGJ6NDV1K1FvTno3TXg3UytBSG5wcXJtcEdTT0toOWJBb0dBRjM3ODQ2eDJ5RlZ3eDF2L3hQOWoKOGVKaU0wM0ttRUQrRloxSmgxRXdjaG42WUFJOGR4cW5lUXkySWppWFVpZDl4aEZuSXlaNmpqdWRIanVyVlEwdQoyaFNvWTVzWnpybmJQazVnNFJNeFNQbmswUlFTUW0yS2ROaVljT1ozTWJLMk9ERFpLYkR0NlhBVVA3a1JvNXR3CjE3SElJRGRtMkNTaVpRMnhqQWRBODcwQ2dZRUFuM3o0UkFldTViSis0amdaVS9EZHdHLzJJeGpoU0VjdHhrdjEKbVVvbHpsZWNBbWEvYko2T1pyeCt0Mk9lNFdpMXdqaGNMTUsrMEhEZXozUDRxc0VlbkRvQnlxT0NQbU1NcGJORApWbnlVR25PemMrdXBTdks1TGdlMGNtQmcvRGduT2RtdCtrbnNXZCtzYSs2S2g0cjRwVmg3anFjeGs2MXlNbGRiClZPZVZUZE1DZ1lBSHd3TkJZMkRicjk3MXd0RDdEUzVwY1NKSHpsSTZ3T2FiU1JtVHExK2Nxa1dlbGdEcDFDcW4KbU1XNi9TM0JLV0t6MUE3ejN6bU1VWkZsSGlmRi80ZGRGT3MxWXBydlJSeHVKRlBpcEt5dnZ5T1RiUGpTOW5YNQpCaktZWDFwWWREZ2Z0NGxFMFM1V0s0dkozaGRJeHFJcUhYMzZBVXZCbSs0RXlwT1ExY1BESXc9PQotLS0tLUVORCBSU0EgUFJJVkFURSBLRVktLS0tLQo=
+  certifier.key: >-
+    LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNSUlFcEFJQkFBS0NBUUVBdWNrRGtpR1plUmNmWGUxbVgyUHZlQ1BqRGRvMloreXRQUWpqdVdrMUxOamdMeHErCkJWNTY3TlI1ZFQ0Qk00OTRoTjdQZTRieGhmMEphTEJZVkY1cVRaUjc0YUtrTkZkdGE1Qlo0Qm85Rnl1cmxLS0EKdktNc1QxMEYwTlZJOVRlM1V5NllLSkRES3JnQVNMdW5NTHprYjZMMlpaYVF3aTVWZlg1dXFMNEJoSXJuU1R0bApKNlM2TmNYTHZoTFVFdDJoNFBpazRnYzVlZkM3dkJaSGdkd3o1cG5qNEZ6ZTZkYzk1VE1zQnMxWnVSeEwrKzIyCkJxZEliaFBHMExlRVNkaVV6TGhXNEdLRUVIZHhUc3Z2SzBkU2habHdlTkp1Y01TaEJkNDk4dWxpNXExdEk5M1IKUG16dE1KSTloaXVMTjBGZlcxYjBqVGFFZVdNR3BlR0FBczQ3Z3dJREFRQUJBb0lCQVFDMWJ3dWZzRlJ6SHhPdwo1T0R2RTJlUHltdzQ0UHYwN2Z3WStROTd5TFQzZ1MwZWsxMHpYUnRySWUwamhGUWtDRjdJVTlnSWFMYUNCYVVrCnFlTDVNZU5hdEVGdkR5aVJQVGhNcllJNEN5ZlI4d0h6ZStlQlVWRTZpRHZmd0FzcC95bDNnSzkwSGp1YkFtcTAKblI0ZnlMakdGVDNQNUFTbXZoMGJHMWZ5VHV5b2hGd0ZkSmdPVHBDVnJoMU8xQXJudndzY0NEemk4cWFLeTRQTgpVMVVzQkxFcUtMdXZBek13ejkyM3NmL05BQWtKWHdEanZYeWFGWkFLMmpuQmx2QlpVcUtQcUR3RGZrOElLV01xCmJrdTJYSmFkN2g1USt5MnVncktQRE94bG5nbmZaYWlOd2NsUllwczJPcndDclJhdmZvMFdmcWpHWE5EWHgrcmEKQ3prL3NBenhBb0dCQU9SZEJ3NW04V1JHekpQOTZZOEhFUlVIdmxXNHp4Z1l4ZG9NN2RzdzN2a3IwQkYzUEx6RgpqR0g0U3UwYkpSNHlQRnJyNUI2LzBMWGh0RzBTTHEwSjAvTmZ1NkI4bHZpTTNnRkZYWmFVd1BYN2dncWRDQ3AzCk1rbkZ6NXc2bytGS1NjVlp5cGQ5MWh2V2NaWktFRHVyZXNSeklhSU5nL2xRVEllMnhRWmg4M3RYQW9HQkFOQkUKM1B2S3Z1aGlTWC9UR1dZMndnVGpkRDFmY1lPL0tBWDFyK215OUdTWTBGZWp0ay9XRnpQY1JOUXpLdVo1MDdlTQpxZ0FqbjJQQmtkbTlzeVRNY1JkMSs5Tm44QXUxU3Nsck5NVnlLaTg0QU1ZTEMvRFp5WUM0ME1HQUt1S2FKS3BrClFMOTBsNERjL05odGQvK1dEdndKTFNBY3dBclhsVmhvU29oUit0RzFBb0dBRmJnSFNNWmZwUExhMkNScEJ6SmIKM0kwcy9BZ2tvaDBSRENqNG9rVW1uN29jQXQwOVNKTGRSQ0FTT0RUQnRmcC9KUUtVWXB4SnBGTEFEek9RZnVLVgpadXN1OUJlRllFUTloUTlzMURwM2s2MkU4NjkxckZ4RHl5Sm1HV3kyVTJIMlhDK3JCZmR3MnBydG1LYVlucVF6CmUrV2JTRWRTeXU1cEtPc29GL0JPOE9jQ2dZRUF0VHpuN1RtZTdrengxd21XRmN2YkJUUUdhSTRSRTJ3YTRTelAKVzVoK2NyaEV2YTlhckprSzhmZGg4aU5nMXRYM2RzZ3kvQklEMTJTUWpxSTFMZlczQ0lxRWpaRHFaTlhyOGVHWQpONlpFclhpWHU3L0xNVm5rcjE2bFUyNDhZNXR1QXRWaFB2cXdDTlRHTjNUenN2Z2JyQm8wS2JpN0tmUTNJNHNHCktTRG1HdTBDZ1lCcEVFWTUxczFjM2NHNkRIekZYeURjcGUwTXZoMTV5Sit5UU4zb0hFajFibmlSaGtqTFlsTDgKU1JaWkoxcnRsRWxEWGxxS00zVVZiYzdqMGxIS2NpbVZxQWdRaUNJYVBoaTBFaXl0S0I4ckQ3NERJMzM5QkxlYgpPS3ZFVWZIeFUzUm13WDMvYmJITnI3NjAvWXkzS1U0TzExa2RiV2ZjTnQ2V1FwczVwUTVCRUE9PQotLS0tLUVORCBSU0EgUFJJVkFURSBLRVktLS0tLQo=
+  certifier.pem: >-
+    LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURMVENDQWhXZ0F3SUJBZ0lKQUxiQ3ZZQithNE5TTUEwR0NTcUdTSWIzRFFFQkN3VUFNQ3d4Q3pBSkJnTlYKQkFZVEFsVlRNUjB3R3dZRFZRUUREQlJqWlhKMGFXWnBaWEl1YldGbmJXRXVkR1Z6ZERBZ0Z3MHlNREF6TURJeQpNalF5TURsYUdBOHpNREU1TURjd05ESXlOREl3T1Zvd0xERUxNQWtHQTFVRUJoTUNWVk14SFRBYkJnTlZCQU1NCkZHTmxjblJwWm1sbGNpNXRZV2R0WVM1MFpYTjBNSUlCSWpBTkJna3Foa2lHOXcwQkFRRUZBQU9DQVE4QU1JSUIKQ2dLQ0FRRUF1Y2tEa2lHWmVSY2ZYZTFtWDJQdmVDUGpEZG8yWit5dFBRamp1V2sxTE5qZ0x4cStCVjU2N05SNQpkVDRCTTQ5NGhON1BlNGJ4aGYwSmFMQllWRjVxVFpSNzRhS2tORmR0YTVCWjRCbzlGeXVybEtLQXZLTXNUMTBGCjBOVkk5VGUzVXk2WUtKRERLcmdBU0x1bk1MemtiNkwyWlphUXdpNVZmWDV1cUw0QmhJcm5TVHRsSjZTNk5jWEwKdmhMVUV0Mmg0UGlrNGdjNWVmQzd2QlpIZ2R3ejVwbmo0RnplNmRjOTVUTXNCczFadVJ4TCsrMjJCcWRJYmhQRwowTGVFU2RpVXpMaFc0R0tFRUhkeFRzdnZLMGRTaFpsd2VOSnVjTVNoQmQ0OTh1bGk1cTF0STkzUlBtenRNSkk5CmhpdUxOMEZmVzFiMGpUYUVlV01HcGVHQUFzNDdnd0lEQVFBQm8xQXdUakFkQmdOVkhRNEVGZ1FVM29EMU5EZDEKNzVGOHpXa0VGOFJPTDRHZklqOHdId1lEVlIwakJCZ3dGb0FVM29EMU5EZDE3NUY4eldrRUY4Uk9MNEdmSWo4dwpEQVlEVlIwVEJBVXdBd0VCL3pBTkJna3Foa2lHOXcwQkFRc0ZBQU9DQVFFQWJpWGRIdjdEc0lyLzh1NDROVmVUCmg3ZHNnZm9QRGkrUGdyYXJMbU9CcVpvMUJmdEplcis1c2F5T2tIRFdpKzdCdXBUVi9uT1d3YXA5cEZ1eFBya3UKM2xpcHVKK09zVk9OdFhCd1AzZUdJd2VJbVhHcisvb2JYS2NwU2pwcG5hOWxqTmw1ZjlVLzNiL0RyRHBjbytadwp4RWNNWmcyZHdnSXVWQ0hyZ2R4L3Qzam1NcnlvWTVBQndrSXd2MngvWmZwTFhHQ3dkUXRxRzJNVlU2R2w2MkxQCmZmKzhIVWpPTWVYZEd6c2czYkhqMFhpR0x3MTJkZ0l4VHBlV0ZseXJxQnNDMkxsOUsyZ0w4dldqVkhsM01Fd0QKVlR3QUU3UzBWVlllTGZsRTJuWmxEZzE4bXZhcUhHWEgrT2p2UGwyNWhlYU5mNUNRbTZUb1NuR0NkZ3M3ckNnTwp0Zz09Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K
+  controller.crt: >-
+    LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSUN5ekNDQWJNQ0NRRDNqc3BmQ0pUNVJ6QU5CZ2txaGtpRzl3MEJBUXNGQURBcE1Rc3dDUVlEVlFRR0V3SlYKVXpFYU1CZ0dBMVVFQXd3UmNtOXZkR05oTG0xaFoyMWhMblJsYzNRd0lCY05NakF3TXpBeU1qSTBNakE1V2hnUApNakV4T1RFd016QXlNalF5TURsYU1DUXhDekFKQmdOVkJBWVRBbFZUTVJVd0V3WURWUVFEREF3cUxtMWhaMjFoCkxuUmxjM1F3Z2dFaU1BMEdDU3FHU0liM0RRRUJBUVVBQTRJQkR3QXdnZ0VLQW9JQkFRQ2oxbUZYRzVUQkl5djAKS0kvYVI4RXp1MUEzdVBjeGs1dmg3ZVhNd1Fhb0VuWm5BaGhJTmFEQUJseTRQdjI0VjRqRU50MTQxSGVzakFrNwppUG9wQ1RwN1hQWm81QUpiWHFyS3hydmZJcnBMdkFsbm90KzdjQ1VPQ1N5dTk0eE1ac1R5N2cxbjJSQVVyTHM5Ck1jdHB5Nkl3RXg1V3Q5UUNxWWZFYWc1TWtRMUtrTThyeGl2SndCTlhsYkp5cHQzSytBNjJVVHpWaWpEaVdyeFUKR0k4RDdvWmY4NkQ4alJGWExRdlhmU2NsNmRpSHFQS04xakw0dnMyd3lzK3MyTUVSVksvbVZVY0hreEs0bEg3TwpXN044QmpEajhldEhvMCtsaVY0cGFJY001alV3R3hvWldBWU9FcmpzbGRyWkFFU25SSXBleU1mbFYvL2FjcTNNCkEvRklRKzh2QWdNQkFBRXdEUVlKS29aSWh2Y05BUUVMQlFBRGdnRUJBRU1rMUNTejlsNjA2Ry9CeFpOZVFpU2MKUk5FQ3QyVkNkYTlKTExtSGttUDRNWWZJbTVqWncySnNzRlEwL2VqclA1by9ic09najJLWXF1VjRPbDNHaW5Gegpld2FDMXRFOXNWYmEwY0kra0IzR1RiSkYvbnBQd3lPRE5WVEVjWldzR2lYQ3E3dEE0U0w3RjhPK256NW5EOUNZCmVYTHg0dmtOcSthU0hQOTJUaUM5RlNPam1JM2ZUWlMwRjg1dmNZLzZVN25kc1lHVjBkWGZ2cXZEZ3lvRlhsVTUKaW1RMzFKNmhneWNtZFZFUmhtSHgvOFF1MVRoaHJUaVBKWjJZL3NwSTl1Y24wZWNSclRJaE5aK2ZnQ0pqc3ZIcgozUkRxLzQ1RU5pZlJuc2tEdWt3c3M3NE9ONzJRazg1MEhTaEJ2ZktWbXpyZVhoZTgyZThjR0s5WVNuaFk0U289Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K
+  controller.csr: >-
+    LS0tLS1CRUdJTiBDRVJUSUZJQ0FURSBSRVFVRVNULS0tLS0KTUlJQ2FUQ0NBVkVDQVFBd0pERUxNQWtHQTFVRUJoTUNWVk14RlRBVEJnTlZCQU1NRENvdWJXRm5iV0V1ZEdWegpkRENDQVNJd0RRWUpLb1pJaHZjTkFRRUJCUUFEZ2dFUEFEQ0NBUW9DZ2dFQkFLUFdZVmNibE1FaksvUW9qOXBICndUTzdVRGU0OXpHVG0rSHQ1Y3pCQnFnU2RtY0NHRWcxb01BR1hMZysvYmhYaU1RMjNYalVkNnlNQ1R1SStpa0oKT250YzltamtBbHRlcXNyR3U5OGl1a3U4Q1dlaTM3dHdKUTRKTEs3M2pFeG14UEx1RFdmWkVCU3N1ejB4eTJuTApvakFUSGxhMzFBS3BoOFJxRGt5UkRVcVF6eXZHSzhuQUUxZVZzbkttM2NyNERyWlJQTldLTU9KYXZGUVlqd1B1CmhsL3pvUHlORVZjdEM5ZDlKeVhwMkllbzhvM1dNdmkremJES3o2ell3UkZVcitaVlJ3ZVRFcmlVZnM1YnMzd0cKTU9QeDYwZWpUNldKWGlsb2h3em1OVEFiR2hsWUJnNFN1T3lWMnRrQVJLZEVpbDdJeCtWWC85cHlyY3dEOFVoRAo3eThDQXdFQUFhQUFNQTBHQ1NxR1NJYjNEUUVCQ3dVQUE0SUJBUUFobjVPTmU3WjN0TFFienYxMW1IVTAxSmZpCnY4dU9pOU5uMjUzZld6aVlXUlVaK2d2aXBvUEZzcGgrajZQZkR3Y3oxZTJhbDR4Z3IwdzVtYU04MThmSTZEN0wKVkdqWWNGSW9Gc205ZHY0TmZVbU9FYVZsNUNPMld6cEpUOEQwODF3L0g4WG94blQvRDlDSE93ZjlZWEF5VS9GZAo5NnBNSVRFUmtSNWpvQkhMZVd2TzhVRzZ6MmJZTnRQNno5K2c2aU1xN0I4UUx4UUZaZTlVU2lNRkc3aXdpbzI1CjNuaXlwQlZZamluMERuSWN2S01OOFAzYWFQbWxTZExZS21BOExwaWVxa3lzVW9Qc2Fjd21INzh0K1BkV1hhUUgKUXBGaUVua1BzekFkSTdoVWtaZjNKN2lJT2VPcnZHclVhNDlQVmJjOCthWHJmTE5EMExCQnlBV29JVStTCi0tLS0tRU5EIENFUlRJRklDQVRFIFJFUVVFU1QtLS0tLQo=
+  controller.key: >-
+    LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNSUlFb3dJQkFBS0NBUUVBbzlaaFZ4dVV3U01yOUNpUDJrZkJNN3RRTjdqM01aT2I0ZTNsek1FR3FCSjJad0lZClNEV2d3QVpjdUQ3OXVGZUl4RGJkZU5SM3JJd0pPNGo2S1FrNmUxejJhT1FDVzE2cXlzYTczeUs2Uzd3Slo2TGYKdTNBbERna3NydmVNVEdiRTh1NE5aOWtRRkt5N1BUSExhY3VpTUJNZVZyZlVBcW1IeEdvT1RKRU5TcERQSzhZcgp5Y0FUVjVXeWNxYmR5dmdPdGxFODFZb3c0bHE4VkJpUEErNkdYL09nL0kwUlZ5MEwxMzBuSmVuWWg2anlqZFl5CitMN05zTXJQck5qQkVWU3Y1bFZIQjVNU3VKUit6bHV6ZkFZdzQvSHJSNk5QcFlsZUtXaUhET1kxTUJzYUdWZ0cKRGhLNDdKWGEyUUJFcDBTS1hzakg1VmYvMm5LdHpBUHhTRVB2THdJREFRQUJBb0lCQUJFOEJmVlIwMjRWc3hQMgpDRnZmM0hVQ3FVZVRUMzJKbDRaR3JqdkJ1bCtId2FqSVVhR1c4cGdBazFSV1cvNCtSd2JNOXJNMU5ubVNLWTUzCnRFa0l6WHdZcFZzWFVTQW5ielB4ZitYVEUySFFIL1VrN3dBYXBlczZEOWMvOXlRNlUxRnl0VHBOWFNHdm9lcW8KQ0V2U3ZmYnNxKzVYWEJnRG1XS1IvWHNVYng5K3ZSWC9WQWJZZ1crUDMzdVpNRFBzcW5TRFIrdVdybi9LcysrSApCc0wzeVlxTTZTK3Q5YSszNmFJNWd2RmxMVmRrYmlnQVoya1Jjc29EcEk4SmtjdXFUSlhJaUlsaHlEdnNkTkZVCldhN2tFdjI4MEdjZ1FSRmR5TkY2dUF1SUpSVzlSeEY2V0pMNE5sS2tlTDdxSHdPa09tNUNLZm96NUk0T20vdkgKZFBaTERZRUNnWUVBek9EK0IvWEhubzVjYTQ1b1RtdmRYVXVVdGhUMEhKSUw3UFZmc3BIN3BTb2UwY04vYlF1bwpoekE3MFpHeHpsd3JGbEhaTlpNNlozeUJCcjVOYjlkV2FxT1hxeFFiOXNtWWxzc1IwakJNQTkzM1BVaUtaa01MCjR4VlY5cWRwRXJ5KzNibFJha2FxQ0kxbnErNm00NU1HTGdOb0psaXJHalpFQTB1bFFjMHdUSThDZ1lFQXpMZksKZy85NHRLZFBKYU91VndrUi9WbExHcFlvUEFkN0tHaDlYTFNMMmhGc1ppL05NMzZnNlpQbk5Ga0Y5TUo4WkVhOAplU1ZSZFFEaEMrVlVqUjFTamdvdWU5N2huM2pmZ2pNNDFkQUJzeWhNUzE4Wnk3RWJsdUc4Z1hXWkNVYzdZUzhICjhZSlBuT0hKa3RQMllpQ3NwVEg5QjVSVWFwVDlEY2hiRjlYNncyRUNnWUIyWEFERnpucXRJZWRJaDdQQW9sWDMKUU9PL3NTazVuREhoaWZ2b0tLZnRTZ0VXQTlBSXlqUnBMVGRSb2M3THZibHlvb1JPakNpd2dsL3o2bHJJSXVvYwpuemZPc01aYTh5b0E2MzMzSk1tMWJqVVlKV0UzSk1Lb1JMb3R6WmRKS050SE1ubFRZVkYzc1dGVUZZSTZkTVNjCkxvR3JyWXZqajdnSkExbU1ReU1GQndLQmdHSGN4a25kZVhWYXVjSXpnZWNIWmZzbmtYaVBLWUt3ek5ZZlJUWm8KOUtYMVNFMTlNbW9ZY1pIWGEySWg0SEFGL1BMdXdiQmovNUdnTHZUQjEyNXlBd0gxcWd6N0dmNWpDTzJ6ME1xZApXZ0tzRS9TLzdKUHNBVlZhYWdPMUZNaFRyZllpUm5qVUkzektqdExLMHZCTDBGeFVEakp1WFFCcVlxSVJFa0xOCnZzZGhBb0dCQUovSytCa0V4c3hRQjRDR3REYXYxc0hmVTRkZUhHQUN6WGZOakU5U1RPSS95WlJsZlp1am5GOWQKRXNaRVZOQVlJL3QrM3NxaUZzZGZpeXhRNUNoWUpiaW9OQkFGTFp3clVTaWFxanUrbThqcjhnVERyQUpNdjk4bApZcS9JQ2JjSjZ1S3Rlc2Z2cDd6enNoUHVQaE5hNlhqdzIrZkhZMDh6RnNmcVBtSFhJeU5hCi0tLS0tRU5EIFJTQSBQUklWQVRFIEtFWS0tLS0tCg==
+  nms_controller.key: >-
+    LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNSUlFcGdJQkFBS0NBUUVBMU9VUExURGwrRVdJZnQrZlNxUWd3UmZHdzZmYjBuRkJidndVd05qUHJLRDRnend3CnJHQ245ZmlQSWtRUnNOSGtJa2VxQWFOc01wVC9Ed2hPdUhySCt6M0poSFo2WVBqaHVUN0hzclpOekluMHVwcGkKZmduMjVVcGVUanE0TnpRSWV3aHdBTWlJY3lMNGQ5U1ZHV2EycnEwTHI3ZG1WN28vWnNLNlNEMkFiZDBwT2MvbwowdUVEMTkwL004RlQxcEdTYkFZTHlsWVZSWEI0a2dPdlJpVG9aUUlTSXJTSXFENGR0RDhGT1h4bFlRSXJaNUFLCnVNL0l0OFBveXpVUDNCeXFJMEFRNTRDL3QwWGJwS2pwOUpvQzl2TDF3dEtQYnlJUjE5Z2VLWHlhVDN2VUVFSHAKa1ZsdGZ0SU9sV3J2dmc3dmRhWWhIVDZZNGxkbEZGVi8yaDI0QlFJREFRQUJBb0lCQVFDYXpXdzVxZ0t1Z3JENwp3Rk10alNhY0FWUHdWUkJNZHpuakg3MWZkTWVkZVBiN1Jqc0dQTW9rMnZZSkxvSEdsdmhSek5aYmxwOUlNSHMrClRRWWdzbmJUdzF2U3krdTBzNFErbE4zVW55YjNBYUZJUnBZem03OUJmdEFRQmphSlBYYWxMNzl4Y2w5MWlRb3UKNkE3NmgydHluRFdSTWNSaktmU01IakFoODBaOW15MWsrMzVMckd0c0g0OWZRWDViOFJ4a0FYYjhscjJjb2pvUgorZmx3NEpITEVrcVNUSDVOaHFrT1E4UnMvL09xM3FWOWtuOER6U3lpWm5IVG9wZGtNdmRzaWpHbFhldE12d3BXCjJRSU1QMVhST0dlaEoyS000dkFFVXI3NmF0RXVSb3J1dWsyOHczU0VQV1ZMOTcxNUxCYzluMnducGw1Qyt1ejEKci9ZTkR3ckpBb0dCQVBMN1grWStYdEJxdjcxc0k5ZCs3ak01QmVXZ2Nwci9nSlFVU1AwNUhJNnpTWGZ1SEJlRwpyYURYdU52T3lvRjdRODZ1b0g3ZlBXczQ5a2orbFN1QVo1VUlPWnlSZEc2czVZT1dVSU0wNml2TmFlbkRFbUdlCkFoT3Y3enAyMDRXcjNwbEc5Um5kZnRXZGs3b1JESWx0Q0h2dUh4NUJpLzFhc1QwcTlOWlRNYWhmQW9HQkFPQk4KQmZWMGpVQXRORGtFSjFMeXc3aDZFQndJR1kwNnF0amFxbVphb3lYZ2xpTWRVV2pMSjdLQWRzNERNZDdhb2V1cgo4amZxVDErU084aExINStQTm5SUDB1YzI3THhzbytMcDMxLzJaak14ZnR0YzRBN3YxWnMvNHZEaXFwRENqd2U1Ck5aOS9ySThCd1hGc0VodlZXaC9OVkEyVE53KzdJT0xnbmI1d3Vzb2JBb0dCQU1aUktUcVJHVzNlVXRUV0dJTGcKVktaMkdqd0xNcjhUWHV4OWlmMHp5ZjBtbEFaUXo1amNFWWEveTErTWJuZzBGV254MllqengvdGxxSTUzUzJVUQpEbnJ6RmFLV2pZTnZsbnhLQ1RpdHpac21zeFZhWS94TXJNRkl6V2JZYVZnbXFTNU5YZXRZZnhiMjRBWHp1Rm5LCkppeVFjOUdNQ2lnbEI1ZzNJVkowNElqZEFvR0JBS3FzY1RoUXM1cDl5eHNIZWhTMy9RM0djN09neGpDY3o1dXEKNTdaeWlXb3M5cEZKb2NTbnNWRTJSekNEWmRNNWNiUXVabVQ5dWQvekdlSlNwNEYySysxZFFCSUh6U09qVnlFMgo3RzNNdy85NFRoc0ZGTWpJM2pULzYrTjMxbW5JWWFWeTNNYTlFOFROaFRDVkYwSnVtZUZSRUFBMFlOVnJncDZnClkrZWhSOEM1QW9HQkFLQm5yWFA4UU8wTlRJclpZUjk2UVBNS3ZrTGI3SjNHaHBob3JJVGFQWjZ1T0FiS29INDIKNHhiZEVlaEYybG4zbE9waFNTaXdmbTFxVS9KdmRCVHhYYUVCTWh0MEw1bmo1RkNxWVJHaHBma3o0MWRCOStKUQplS05LUDljU0hCZm5idW81Q0lNUVI3OWs0VlNBU0FLVEY0YytHL3RWekxHN3RyanZjYzFnZm5MTwotLS0tLUVORCBSU0EgUFJJVkFURSBLRVktLS0tLQo=
+  nms_controller.pem: >-
+    LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURTVENDQWpHZ0F3SUJBZ0lSQUtvdnBuclVSWVdKYm5HUFdpRW12Umt3RFFZSktvWklodmNOQVFFTEJRQXcKTERFTE1Ba0dBMVVFQmhNQ1ZWTXhIVEFiQmdOVkJBTU1GR05sY25ScFptbGxjaTV0WVdkdFlTNTBaWE4wTUI0WApEVEl3TURNd09ESXlNekV6TjFvWERUSXhNRE13T0RJek16RXpOMW93UERFTE1Ba0dBMVVFQmhNQ1ZWTXhDVEFICkJnTlZCQW9UQURFSk1BY0dBMVVFQ3hNQU1SY3dGUVlEVlFRRERBNWhaRzFwYmw5dmNHVnlZWFJ2Y2pDQ0FTSXcKRFFZSktvWklodmNOQVFFQkJRQURnZ0VQQURDQ0FRb0NnZ0VCQU5UbER5MHc1ZmhGaUg3Zm4wcWtJTUVYeHNPbgoyOUp4UVc3OEZNRFl6NnlnK0lNOE1LeGdwL1g0anlKRUViRFI1Q0pIcWdHamJES1UvdzhJVHJoNngvczl5WVIyCmVtRDQ0YmsreDdLMlRjeUo5THFhWW40Sjl1VktYazQ2dURjMENIc0ljQURJaUhNaStIZlVsUmxtdHE2dEM2KzMKWmxlNlAyYkN1a2c5Z0czZEtUblA2TkxoQTlmZFB6UEJVOWFSa213R0M4cFdGVVZ3ZUpJRHIwWWs2R1VDRWlLMAppS2crSGJRL0JUbDhaV0VDSzJlUUNyalB5TGZENk1zMUQ5d2NxaU5BRU9lQXY3ZEYyNlNvNmZTYUF2Ynk5Y0xTCmoyOGlFZGZZSGlsOG1rOTcxQkJCNlpGWmJYN1NEcFZxNzc0TzczV21JUjArbU9KWFpSUlZmOW9kdUFVQ0F3RUEKQWFOV01GUXdEZ1lEVlIwUEFRSC9CQVFEQWdXZ01CTUdBMVVkSlFRTU1Bb0dDQ3NHQVFVRkJ3TUNNQXdHQTFVZApFd0VCL3dRQ01BQXdId1lEVlIwakJCZ3dGb0FVM29EMU5EZDE3NUY4eldrRUY4Uk9MNEdmSWo4d0RRWUpLb1pJCmh2Y05BUUVMQlFBRGdnRUJBR3VxSGI5bllwWjJCbnVJckp4VnN6Nkk3SG5mQVVWdDJzSWpwQ0hzeTBKQmEyR2MKMGN0Y0gyQ1J0ZE1xUkJCTTJFcm1tZ0Z6OHRLUzJmbVBWVU5Wem0wVlh0OVhLUUI0S1ZUaGlveS9kRkNVd1BWdwp4T0hnQmpFS2xZanQySk8rY1JMMG9yUXVKYjJ0MzRidnNHdjEvQ2Y4WkJwQzBlK1BuRCtTSUFVNnUyVDAzMnh4CmoyT0EvaDVnODZDTDBIbnRONXdUdlhoL2VZYjNTTHJlQThTT3h1dW5UejZIeGh2SklHZ21jSEd4dG1wdGpRUzgKdEFkVGFLSDhxYXA1TTdFWE1mTTBlOS9kNGFYTWl6am5iUUxEYU0yWENFVnNXbzlnYm9zN1cySnNVamxhVmZvWgpydUJNNTdpRkVtOWp4b2Q0TThhK3lRdFRLTmQ1T2lvVzMya1UxZDA9Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K
+  rootCA.key: >-
+    LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNSUlFb2dJQkFBS0NBUUVBdEtzZXk0WWxhQU1TcitERklZZUQycDNkL2FOUWJrWkZ4Z0ExbVAwWFcrZTkyMUNnCkxRaFlHcGxlMEFNNGpKbTZubDhTS0lCdXlzUk9NdGlnYmxmc2pSem1QTjhUUTFOQmZ2V09MT0F3NjRBRkRuUW0KOWJ2cnRPQU5mdkMzZmdVdDlBQ1V1c1ZndHAxNWtUQXkzaXZEN0N3UGNpTzNTaUFQd2VlSituTTZUNjl6NlBjawpuSlp0Qk9uMC9HSzFYaCtTSnExSHNNcGpySElYRC9sSmVBaEdJanZhVC9GVVJLM3dBUU05ZjlTWHJVMkVaSFY4Cm5vTGJFRTBSYVd4SVgwQ0tDeGg3UDgyN21WUkJOQTl3OWlIRzh2UUVjcTFPcDVlbU1jQ3B5UFJRblhUcHB6ajEKMlBHTEUyTlFaN091dythRThtY01CYWloUmdTZnhvV3l0eHA3T3dJREFRQUJBb0lCQUdMczgvN0RKRVpRc0hISApaSW1ZZDFWRWJlSk5BMlJ1YkJRZjF6ay9GQVJKMzBad1hsUnFKanZpVU8wYlptSnVacVlETHFFb3VnR2kvYUtQCnhVREdPZ3VHa0hjeU9vejUwSG9oSU1sbnRNR3VwcFlrZVpUQ1lpejNKY3lsS0FRRCtBYU1MdVFaNFh2OHZDMEkKdEVHOHV4bmRnbE9nUk9OOHJNUWk4UVZIQk4zT0tvb2ZzcU1HSkJKazRpcDJ4OG5mRFljRkhqa3UvWnV2WWxKVgpETmJMY1gxRk9ER0RpclhyTjVVU285UXhnZ3JSY2psOVlTbTRpZlp3b3UwL29waU1SOHhMZ0czUTRmNHQ0SGw0CjV3dFUwQ21sVXo1WUJhQ0Q5RFlISU1haUJXeS9ObEVvSFBpblM5bS9ia1dlRER5ZzJ4SWVFb0ZKS2toQ0Y4d2cKK2V4d2Fta0NnWUVBNzRMTDhpeElYYnNsMDZ5dlZmeGhMb1FTeEdBcy9rNE52QzRpWjNGZFljd20vUW5ycERXUAp3ekVZcHZsbnVKMGRlVmlqV2FOYVBJNHViK1RHZ2VxaGNrdnphNlBvK2d2T3ZEa3NqZkhrNEp2cW5uT0VHK0Z6CldlVXU3ZmJFWUkzb0xza0JkRnYzOFo2NXdMeUM1VTJ2cUpXSS91U1lRdUZ1dVNSZGhuN0pOQWNDZ1lFQXdSdEUKcXJDUHdVK1ErZDltTWoyd3F2bEJJMEU1dVB6TERmbEFETFdURWQrOVE0M2N5MnZoWjZoYmQraFh3TmxObDJuSwptVDB4TWtYY3lpQUl2ck1mVi9LWmRhdmc0R2dQK0RKNGp6aFlUQ3hTbENtYzVXai9XSzB5RGlJNVUxWjJtYUs5CkNZaUhyb1dVK3RITjJSS3o3em1ZcTI5YWpOTU85bm5xakx0SGVpMENnWUFRa2VYMkxTWWNoZlFKL3VwcWNubHUKdEdoditZOWpVSmNXcThKcGthZzZPZHVBcWcwSllVTSs1OGlpMUtKZVhWQktzdDBxT0dqbnc1Wm0yMWI0YWZrZApaUy9FQktUN2w1R0g2QlN6QlVjbVd1TVNiejkyaGxScXBiWm5kQ2tGM1F0eElTcmVsL1pCV3cvU3k3ZnFrVU5UCjBIU1gzY3pDNDhHN1FVN1BIVHBpUlFLQmdBdkdPZDJlZm1WdkVJdnJ6ek5wQjRpbFFnK0FQcURFNlN5azhmN1UKWTI5SGtTYTVVNmtqbnM3UE9TU0tpaTg4RUxzV3ZEK3p0M2cxUWswZ3Z1ZkJ6RHQwazE3VmFCVEd3NUtDb1U4NgpSRWdBdTloRTRVZ3Jxc1loYVZmclJrdUtqaGk0RDRheFNIU2Z1SUhDb1NhSE9XbHd2WnBXWTlNS1czTXo0OVZJCjVnYlJBb0dBWWNrVk96aE1oVEZKaGhXYU9QOVRLdnpXY0NUY1hTWERpU2dVRitoWVpzSXdiTjliNXd4QTBuWkQKVGxjVjQwQk5MSmU4R3RsTXZLUzFxUlJISlNDRjVtSklLV1ZFSGRwcTAwZDVDUWhxOVdOVGZkOHNnWjdhZlFKawphOVZWMjIyU08xd1lyMzBDeUlSSUxCZTlqYmhxY0daeFk5UkFjL3RmblBEdDU4Z3U1MW89Ci0tLS0tRU5EIFJTQSBQUklWQVRFIEtFWS0tLS0tCg==
+  rootCA.pem: >-
+    LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURKekNDQWcrZ0F3SUJBZ0lKQUpSWXZTMFB3aWlrTUEwR0NTcUdTSWIzRFFFQkN3VUFNQ2t4Q3pBSkJnTlYKQkFZVEFsVlRNUm93R0FZRFZRUUREQkZ5YjI5MFkyRXViV0ZuYldFdWRHVnpkREFnRncweU1EQXpNREl5TWpReQpNRGxhR0E4ek1ERTVNRGN3TkRJeU5ESXdPVm93S1RFTE1Ba0dBMVVFQmhNQ1ZWTXhHakFZQmdOVkJBTU1FWEp2CmIzUmpZUzV0WVdkdFlTNTBaWE4wTUlJQklqQU5CZ2txaGtpRzl3MEJBUUVGQUFPQ0FROEFNSUlCQ2dLQ0FRRUEKdEtzZXk0WWxhQU1TcitERklZZUQycDNkL2FOUWJrWkZ4Z0ExbVAwWFcrZTkyMUNnTFFoWUdwbGUwQU00akptNgpubDhTS0lCdXlzUk9NdGlnYmxmc2pSem1QTjhUUTFOQmZ2V09MT0F3NjRBRkRuUW05YnZydE9BTmZ2QzNmZ1V0CjlBQ1V1c1ZndHAxNWtUQXkzaXZEN0N3UGNpTzNTaUFQd2VlSituTTZUNjl6NlBja25KWnRCT24wL0dLMVhoK1MKSnExSHNNcGpySElYRC9sSmVBaEdJanZhVC9GVVJLM3dBUU05ZjlTWHJVMkVaSFY4bm9MYkVFMFJhV3hJWDBDSwpDeGg3UDgyN21WUkJOQTl3OWlIRzh2UUVjcTFPcDVlbU1jQ3B5UFJRblhUcHB6ajEyUEdMRTJOUVo3T3V3K2FFCjhtY01CYWloUmdTZnhvV3l0eHA3T3dJREFRQUJvMUF3VGpBZEJnTlZIUTRFRmdRVVg3RWRCdUtIL3ZSNEgyeUoKVXd3TmEyNzJ1R1V3SHdZRFZSMGpCQmd3Rm9BVVg3RWRCdUtIL3ZSNEgyeUpVd3dOYTI3MnVHVXdEQVlEVlIwVApCQVV3QXdFQi96QU5CZ2txaGtpRzl3MEJBUXNGQUFPQ0FRRUFSbVkyNTZQamltSnhEa3lFWHZqdC9Xb0NZMmM1CmVhYkRPRURkVThLS0tJLzQ4OUhQQ2JyRnN6bVNxQ1ZFUUI0ZnJJMEptQVFTbUtySDZPQ1MzVEZRejlaY3F5aEoKQUpXYzF6UFoya2o0Q0dKanJ3bmg0VHhZU2REOW5EVGtJb1pKRkpFMVFOWk9MYVZoMnV1dmg3Uk5jSHo0RWk1YgpObGcxT0VMaUxaeWdKWUhnM3pHandRT0pudXNxU0NLVk9LTU5aaU91S0ZrRjAvZnhmQVhTOWFOKzdBbjFpQTBTCjduMEc2MEFhN2ROaHdUczFJYVA3bDNzYjNjbUpYcGwvOUllS2UyNEIrTzlSK1NFZHBPbDIrSU0zdmVHUjhKdlgKVHU1RDNUYmQ2b1VZRC9QeUxRclppYW9YY2FDVVhYYy93SktSeElTdzJnVUtpZjlCeFBOR0RXQ2l4UT09Ci0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K
+  rootCA.srl: Rjc4RUNBNUYwODk0Rjk0Nwo=
+  vpn_ca.crt: >-
+    LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURJVENDQWdtZ0F3SUJBZ0lKQUtMU04vbnd0SVM2TUEwR0NTcUdTSWIzRFFFQkN3VUFNQ1l4Q3pBSkJnTlYKQkFZVEFsVlRNUmN3RlFZRFZRUUREQTUyY0c0dWJXRm5iV0V1ZEdWemREQWdGdzB5TURBek1ESXlNalF5TVRkYQpHQTh6TURFNU1EY3dOREl5TkRJeE4xb3dKakVMTUFrR0ExVUVCaE1DVlZNeEZ6QVZCZ05WQkFNTURuWndiaTV0CllXZHRZUzUwWlhOME1JSUJJakFOQmdrcWhraUc5dzBCQVFFRkFBT0NBUThBTUlJQkNnS0NBUUVBNFF3d25wUEEKYm1iYmNicEZHdEk2b1hibXl1d3VKcEs0bE4rK0ZQZ2crdTdMeXpPc1pBQTFxbEEvYTd2bTJicUVVejNYYlVxYgpIVy9RMTMzMFI0VzhHTmtUQklNMi9LSU9aaE1oNUIxOTkyM1JHajdmMzI4NWNIaWRwcmsrSXU5ZGRKVU0ycFIwCnZTd2kwRFJNOVcyZysvRy9aZTJmcnVkR241SnErNFVaaHJYUG8rdUt3OWZmRW5xa2NlTy96K1M0R1l6VmpyZjgKUVBQTUNtSlNpQ2hFUWpPczBoMit0QUVCRGllbitWVnl2d0xWR0Q1R3NSQ3JKQlpwYklIOXg1dk85cE82ZkgzQgpGeXdsck9aQ3llTm56Ukd5RTgrelZvTHRyQ1hHYitha2hmYnVCdWZCbXdzcmZFS0dRMnVEZVN1OUxWR3NRTlUwCjJyOFNmaWwySnVKNkN3SURBUUFCbzFBd1RqQWRCZ05WSFE0RUZnUVVSREFVSnpzU0pkbmZvMUxpKzBLN2pnczcKSFQ4d0h3WURWUjBqQkJnd0ZvQVVSREFVSnpzU0pkbmZvMUxpKzBLN2pnczdIVDh3REFZRFZSMFRCQVV3QXdFQgovekFOQmdrcWhraUc5dzBCQVFzRkFBT0NBUUVBWXlQdlUrck14ZitYbXNzaG5xSjhFV3hhVGdXY3pqekQva204CnRsY21KNVBMMVpyS1N4Q1ZvVCtESVNrRGdQOWhLY3RhU3cxWTRQclpya0J6c0FVbGlDQ1IyUXRCOWR3TFYrYU4KT05Ma09paHJIUWZhMTJGc1NnMERFNFh2NmlyTGZuVzhuRkZWQzc0UkhnRjlUbS8rY09TangzLzRKMzJWWmRmaApGUVZxeDhzZWlWVWRZeVlwTC9iRDlMekJUQ2VzenlFdVVuWXMzLzl5ZUs2ejhLVVZQeERxOFBwRXVhYzZKdThLCjZkcHJKb25JYWFwZExIL3hHVVRxRis3RVc2TllhUkRsME1MRisrTFZzWmtlK1B6b0tQTUk4SE8wamFOT2hHZnIKWkJneHpRcHprOGlQV3paNGVwVGpGMUNLQTYwUWsrSEQ0UjVKVGEyWWNZT2tGSTUyaWc9PQotLS0tLUVORCBDRVJUSUZJQ0FURS0tLS0tCg==
+  vpn_ca.key: >-
+    LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNSUlFcFFJQkFBS0NBUUVBNFF3d25wUEFibWJiY2JwRkd0STZvWGJteXV3dUpwSzRsTisrRlBnZyt1N0x5ek9zClpBQTFxbEEvYTd2bTJicUVVejNYYlVxYkhXL1ExMzMwUjRXOEdOa1RCSU0yL0tJT1poTWg1QjE5OTIzUkdqN2YKMzI4NWNIaWRwcmsrSXU5ZGRKVU0ycFIwdlN3aTBEUk05VzJnKy9HL1plMmZydWRHbjVKcSs0VVpoclhQbyt1Swp3OWZmRW5xa2NlTy96K1M0R1l6VmpyZjhRUFBNQ21KU2lDaEVRak9zMGgyK3RBRUJEaWVuK1ZWeXZ3TFZHRDVHCnNSQ3JKQlpwYklIOXg1dk85cE82ZkgzQkZ5d2xyT1pDeWVObnpSR3lFOCt6Vm9MdHJDWEdiK2FraGZidUJ1ZkIKbXdzcmZFS0dRMnVEZVN1OUxWR3NRTlUwMnI4U2ZpbDJKdUo2Q3dJREFRQUJBb0lCQVFDa3BURnc0dkgzRTROYQoyZ2N5enptYjVZeUdTM0tjUDkyUTlYeHdoUFJFQWE3UmRIV2NGOWNyU2xpTDdrVy9aMGptU2FreFNWTGduMnl3CkszTXJYSGszeUtDMFBYZGVMd1hQd2hHYWZjVXAzNHNLNDVNUU9hUlJWNzBuUEFGc3Q2aXM0VnN0RTAyeEZQaEgKVU93NDVzTFBjSmN4OEQ1U1ROd0xaS2ltYVVNNm5Ld0FnWFF6eFNjaGVoU09FdEdwc0VGaEJlOFdteExKNjlHRwpwQmd0RzE3VnZHYnFvRTkrbjNITXNBRjlkRTBSVlJCdEdEMmlaRmZjd1VXMkZFTlRJK2xIQVVXQXVzZVdGRHlCClk4R2FPTnFMTXpCKzVPbkVSZFgyZ0UyYUw1NWlOVUxMaXRXQmpHUUlBVkppdzZ3TVNoaDJpMC9nSTlmN1FwbEIKMmlObHpuMFJBb0dCQVBZNkpIcDEyYWUzU0ZtYXZ1TFZSSnMreWd3RjhhRGdEcG5xOFFnYVpXeGdYMWdNOU9vaApNdjdpdHM1d3ZSbWU0ekMvK2xVRlNQUXQrY0F2cXA5ZWNlb2QvK3RiT3NGekxkenRwRzdoUkhPZnFvMFNlRGF6Ckx0aFZyWDRwWTN2c0oxMmx6QnpPOTUrSm8vWXU0dW83K1lXYkdYYVVveHZiVDZGTllwWERQSStaQW9HQkFPbjYKMk90czU3L1JkdTdzdlRyczVMU1dyY0FGc01qTG0zS3VyTHBldFBlSnNZbUlRbEJaQ2pqWHVtUXVJamhqSlcreQordzNvSlVSdDFvMzFLWXJ1dG1kNGZyb2tNNzRqd3hHcURiMEE1VjBNMmQ3RWFlTTlzQXVEQk5wZFk4Ympka2FxCnY2U3F2OXRENUNoV3FqczhubWJma2ZjVzBQWGRlQ25uY2g3S0F5MURBb0dCQU90SldneFBTMEp4Nk1mL0VFTXYKcWxSekpwMWduS212RVNUUmxhdTVsWXQvZC94cXZTcHh1UXBKV0loaXdNQ1h6TitMdzhtMHVDYmxQQkFEUEpiMwpxQUVnMDZseVR1NEdneC9uVWtiR0tpUVd3ZUgyY1R0TDlBcXpySXF2UUNwdDJwd3BUNmVEdXFvUDI4Ym12TjA1Cm5GR29pU2VBRjNFS0c4aTJhdXRUV2k2WkFvR0FZT0Y4Ny80bjkwVEQraW9NTUZubVdPQUxFWGRKdTlxU2d1blEKbTFxYmsrTnZuNExMOG5qcndwMlFqK3FLUU03TXNYTnFnRmVmRnJaa0lHTmkwQ1FIWXRDQnFKRlUyMlh6WDEwSwpVemdMd0h1UnVxdVpMSDVlWm1YWm5KRU92MHR2cmRNRmh5a3NSNTNVMnQ4SG5YOThGeHg3VTlRZXNhOENFbGZDCjZQeThWQUVDZ1lFQXBoSVJwTDVQVGVYUEUwZDIxOUt6UzFONVFtcytod1NidmZZMGREWE5hNTk4T0lPYkNSbGcKcTg1TEx3QUtLUnZOb0VyQTFXRkxyRllVNWU4RVZBejVLTWZCblhDV2pRT2JudURGSWljakVkbWtBR2tjT3Nwcgo0WkZ2cFIrbXBvR0w2aG1sSmQxTERjd3lybTZWVXY5cGpHMi8zcVptRkljQ1pMcS9RaHpheitnPQotLS0tLUVORCBSU0EgUFJJVkFURSBLRVktLS0tLQo=
+kind: Secret
+metadata:
+  labels:
+    app.kubernetes.io/instance: orc8r
+    app.kubernetes.io/managed-by: helm
+    app.kubernetes.io/name: secrets
+    app.kubernetes.io/part-of: magma
+    helm.sh/chart: secrets-0.1.3
+  name: orc8r-secrets-certs
+  namespace: default
+---
+apiVersion: v1
+data:
+  metricsd.yml: >-
+    cHJvZmlsZTogInByb21ldGhldXMiCgpwcm9tZXRoZXVzUXVlcnlBZGRyZXNzOiAiaHR0cDovL29yYzhyLXByb21ldGhldXM6OTA5MCIKcHJvbWV0aGV1c1B1c2hBZGRyZXNzZXM6CiAgLSAiaHR0cDovL29yYzhyLXByb21ldGhldXMtY2FjaGU6OTA5MS9tZXRyaWNzIgoKYWxlcnRtYW5hZ2VyQXBpVVJMOiAiaHR0cDovL29yYzhyLWFsZXJ0bWFuYWdlcjo5MDkzL2FwaS92Mi9hbGVydHMiCnByb21ldGhldXNDb25maWdTZXJ2aWNlVVJMOiAiaHR0cDovL29yYzhyLWNvbmZpZy1tYW5hZ2VyOjkxMDAiCmFsZXJ0bWFuYWdlckNvbmZpZ1NlcnZpY2VVUkw6ICJodHRwOi8vb3JjOHItY29uZmlnLW1hbmFnZXI6OTEwMSIK
+kind: Secret
+metadata:
+  labels:
+    app.kubernetes.io/instance: orc8r
+    app.kubernetes.io/managed-by: helm
+    app.kubernetes.io/name: secrets
+    app.kubernetes.io/part-of: magma
+    helm.sh/chart: secrets-0.1.3
+  name: orc8r-secrets-configs-orc8r
+  namespace: default
+---
+apiVersion: v1
+data: {}
+kind: Secret
+metadata:
+  labels:
+    app.kubernetes.io/instance: orc8r
+    app.kubernetes.io/managed-by: helm
+    app.kubernetes.io/name: secrets
+    app.kubernetes.io/part-of: magma
+    helm.sh/chart: secrets-0.1.3
+  name: orc8r-secrets-envdir
+  namespace: default
+---
+apiVersion: v1
+data:
+  .dockerconfigjson: eyJhdXRocyI6IHsiJSFzKDxuaWw+KSI6IHsiYXV0aCI6ICJQRzVwYkQ0NlBHNXBiRDQ9In19fQ==
+kind: Secret
+metadata:
+  labels:
+    app.kubernetes.io/instance: orc8r
+    app.kubernetes.io/managed-by: helm
+    app.kubernetes.io/name: secrets
+    app.kubernetes.io/part-of: magma
+    helm.sh/chart: secrets-0.1.3
+  name: orc8r-secrets-registry
+  namespace: default
+type: kubernetes.io/dockerconfigjson
+---
+apiVersion: v1
+data:
+  postgresql-password: cG9zdGdyZXM=
+kind: Secret
+metadata:
+  labels:
+    app: postgresql
+    chart: postgresql-8.5.0
+    heritage: Tiller
+    release: release-name
+  name: postgresql
+type: Opaque
+---
+apiVersion: v1
+data:
+  mariadb-password: cGFzc3dvcmQ=
+  mariadb-root-password: cDd0c3ZZQ1lKQw==
+kind: Secret
+metadata:
+  labels:
+    app: mariadb
+    chart: mariadb-7.3.12
+    heritage: Tiller
+    release: release-name
+  name: release-name-mariadb
+type: Opaque
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: proxy
+    app.kubernetes.io/instance: orc8r
+    app.kubernetes.io/managed-by: helm
+    app.kubernetes.io/name: orc8r
+    app.kubernetes.io/part-of: magma
+    helm.sh/chart: orc8r-0.1.3
+  name: bootstrapper-orc8r-proxy
+spec:
+  ports:
+    - name: open
+      port: 443
+      targetPort: 9444
+  selector:
+    app.kubernetes.io/component: proxy
+    app.kubernetes.io/instance: orc8r
+    app.kubernetes.io/name: orc8r
+  type: LoadBalancer
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: magmalte
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/managed-by: helm
+    app.kubernetes.io/name: nms
+    app.kubernetes.io/part-of: magma
+    release_group: release-name
+  name: magmalte
+spec:
+  ports:
+    - name: http
+      port: 8081
+      protocol: TCP
+      targetPort: null
+  selector:
+    app.kubernetes.io/component: magmalte
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/name: nms
+    release_group: release-name
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: mariadb
+    chart: mariadb-7.3.12
+    component: master
+    heritage: Tiller
+    release: release-name
+  name: mariadb
+spec:
+  ports:
+    - name: mysql
+      port: 3306
+      targetPort: mysql
+  selector:
+    app: mariadb
+    component: master
+    release: orc8r
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: nginx
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/managed-by: helm
+    app.kubernetes.io/name: nms
+    app.kubernetes.io/part-of: magma
+    release_group: release-name
+  name: nginx-proxy
+spec:
+  ports:
+    - name: https
+      port: 443
+      protocol: TCP
+      targetPort: null
+  selector:
+    app.kubernetes.io/component: nginx
+    app.kubernetes.io/instance: release-name
+    app.kubernetes.io/name: nms
+    release_group: release-name
+  type: LoadBalancer
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: proxy
+    app.kubernetes.io/instance: orc8r
+    app.kubernetes.io/managed-by: helm
+    app.kubernetes.io/name: orc8r
+    app.kubernetes.io/part-of: magma
+    helm.sh/chart: orc8r-0.1.3
+  name: orc8r-clientcert-legacy
+spec:
+  ports:
+    - name: clientcert
+      port: 443
+      targetPort: 9443
+  selector:
+    app.kubernetes.io/component: proxy
+    app.kubernetes.io/instance: orc8r
+    app.kubernetes.io/name: orc8r
+  type: LoadBalancer
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: configmanager
+    app.kubernetes.io/instance: orc8r
+    app.kubernetes.io/managed-by: Tiller
+    app.kubernetes.io/name: metrics
+    app.kubernetes.io/version: '1.0'
+    helm.sh/chart: metrics-0.1.1
+  name: orc8r-configmanager
+spec:
+  ports:
+    - name: prom-configmanager
+      port: 9100
+      targetPort: 9100
+    - name: alertmanager-config
+      port: 9101
+      targetPort: 9101
+  selector:
+    app.kubernetes.io/component: configmanager
+    app.kubernetes.io/instance: orc8r
+    app.kubernetes.io/name: metrics
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: controller
+    app.kubernetes.io/instance: orc8r
+    app.kubernetes.io/managed-by: helm
+    app.kubernetes.io/name: orc8r
+    app.kubernetes.io/part-of: magma
+    helm.sh/chart: orc8r-0.1.3
+  name: orc8r-controller
+spec:
+  ports:
+    - name: web
+      port: 8080
+      targetPort: 8080
+    - name: port-0
+      port: 9079
+      targetPort: 9079
+    - name: port-1
+      port: 9080
+      targetPort: 9080
+    - name: port-2
+      port: 9081
+      targetPort: 9081
+    - name: port-3
+      port: 9082
+      targetPort: 9082
+    - name: port-4
+      port: 9083
+      targetPort: 9083
+    - name: port-5
+      port: 9084
+      targetPort: 9084
+    - name: port-6
+      port: 9085
+      targetPort: 9085
+    - name: port-7
+      port: 9086
+      targetPort: 9086
+    - name: port-8
+      port: 9087
+      targetPort: 9087
+    - name: port-9
+      port: 9088
+      targetPort: 9088
+    - name: port-10
+      port: 9089
+      targetPort: 9089
+    - name: port-11
+      port: 9090
+      targetPort: 9090
+    - name: port-12
+      port: 9091
+      targetPort: 9091
+    - name: port-13
+      port: 9092
+      targetPort: 9092
+    - name: port-14
+      port: 9093
+      targetPort: 9093
+    - name: port-15
+      port: 9094
+      targetPort: 9094
+    - name: port-16
+      port: 9095
+      targetPort: 9095
+    - name: port-17
+      port: 9096
+      targetPort: 9096
+    - name: port-18
+      port: 9097
+      targetPort: 9097
+    - name: port-19
+      port: 9098
+      targetPort: 9098
+    - name: port-20
+      port: 9099
+      targetPort: 9099
+    - name: port-21
+      port: 9100
+      targetPort: 9100
+    - name: port-22
+      port: 9101
+      targetPort: 9101
+    - name: port-23
+      port: 9102
+      targetPort: 9102
+    - name: port-24
+      port: 9103
+      targetPort: 9103
+    - name: port-25
+      port: 9104
+      targetPort: 9104
+    - name: port-26
+      port: 9105
+      targetPort: 9105
+    - name: port-27
+      port: 9106
+      targetPort: 9106
+    - name: port-28
+      port: 9107
+      targetPort: 9107
+    - name: port-29
+      port: 9108
+      targetPort: 9108
+  selector:
+    app.kubernetes.io/component: controller
+    app.kubernetes.io/instance: orc8r
+    app.kubernetes.io/name: orc8r
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: grafana
+    app.kubernetes.io/instance: orc8r
+    app.kubernetes.io/managed-by: Tiller
+    app.kubernetes.io/name: metrics
+    app.kubernetes.io/version: '1.0'
+    helm.sh/chart: metrics-0.1.1
+  name: orc8r-grafana
+spec:
+  ports:
+    - name: grafana
+      port: 3000
+      targetPort: 3000
+  selector:
+    app.kubernetes.io/component: grafana
+    app.kubernetes.io/instance: orc8r
+    app.kubernetes.io/name: metrics
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: prometheus
+    app.kubernetes.io/instance: orc8r
+    app.kubernetes.io/managed-by: Tiller
+    app.kubernetes.io/name: metrics
+    app.kubernetes.io/version: '1.0'
+    helm.sh/chart: metrics-0.1.1
+  name: orc8r-prometheus
+spec:
+  ports:
+    - name: prometheus
+      port: 9090
+      targetPort: 9090
+  selector:
+    app.kubernetes.io/component: prometheus
+    app.kubernetes.io/instance: orc8r
+    app.kubernetes.io/name: metrics
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: prometheus-cache
+    app.kubernetes.io/instance: orc8r
+    app.kubernetes.io/managed-by: Tiller
+    app.kubernetes.io/name: metrics
+    app.kubernetes.io/version: '1.0'
+    helm.sh/chart: metrics-0.1.1
+  name: orc8r-prometheus-cache
+spec:
+  ports:
+    - name: orc8r-prometheus-cache
+      port: 9091
+      targetPort: 9091
+  selector:
+    app.kubernetes.io/component: prometheus-cache
+    app.kubernetes.io/instance: orc8r
+    app.kubernetes.io/name: metrics
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: proxy
+    app.kubernetes.io/instance: orc8r
+    app.kubernetes.io/managed-by: helm
+    app.kubernetes.io/name: orc8r
+    app.kubernetes.io/part-of: magma
+    helm.sh/chart: orc8r-0.1.3
+  name: orc8r-proxy
+spec:
+  ports:
+    - name: clientcert
+      port: 9443
+      targetPort: 9443
+    - name: open
+      port: 9444
+      targetPort: 9444
+  selector:
+    app.kubernetes.io/component: proxy
+    app.kubernetes.io/instance: orc8r
+    app.kubernetes.io/name: orc8r
+  type: LoadBalancer
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: postgresql
+    chart: postgresql-8.5.0
+    heritage: Tiller
+    release: release-name
+  name: postgresql
+spec:
+  ports:
+    - name: tcp-postgresql
+      port: 5432
+      targetPort: tcp-postgresql
+  selector:
+    app: postgresql
+    release: release-name
+    role: master
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app:
+      '[object Object]': null
+    chart:
+      '[object Object]': null
+    heritage:
+      '[object Object]': null
+    release:
+      '[object Object]': null
+  name: postgresql-headless
+spec:
+  clusterIP: None
+  ports:
+    - name: tcp-postgresql
+      port:
+        '[object Object]': null
+      targetPort: tcp-postgresql
+  selector:
+    app:
+      '[object Object]': null
+    release:
+      '[object Object]': null
+  type: ClusterIP
+---
+apiVersion: apps/v1beta2
+kind: StatefulSet
+metadata:
+  labels:
+    app: postgresql
+    chart: postgresql-8.5.0
+    heritage: Tiller
+    release: release-name
+  name: postgresql
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgresql
+      release: release-name
+      role: master
+  serviceName: postgresql-headless
+  template:
+    metadata:
+      labels:
+        app: postgresql
+        chart: postgresql-8.5.0
+        heritage: Tiller
+        release: release-name
+        role: master
+      name: postgresql
+    spec:
+      containers:
+        - env:
+            - name: BITNAMI_DEBUG
+              value: 'false'
+            - name: POSTGRESQL_PORT_NUMBER
+              value: '5432'
+            - name: POSTGRESQL_VOLUME_DIR
+              value: /bitnami/postgresql
+            - name: PGDATA
+              value: /bitnami/postgresql/data
+            - name: POSTGRES_USER
+              value: postgres
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: postgresql-password
+                  name: postgresql
+            - name: POSTGRES_DB
+              value: magma
+            - name: POSTGRESQL_ENABLE_LDAP
+              value: no
+          image: 'docker.io/bitnami/postgresql:11.7.0-debian-10-r9'
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - '-c'
+                - exec pg_isready -U "postgres" -d "magma" -h 127.0.0.1 -p 5432
+            failureThreshold: 6
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 5
+          name: postgresql
+          ports:
+            - containerPort: 5432
+              name: tcp-postgresql
+          readinessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - '-c'
+                - '-e'
+                - >
+                  exec pg_isready -U "postgres" -d "magma" -h 127.0.0.1 -p 5432
+
+                  [ -f /opt/bitnami/postgresql/tmp/.initialized ] || [ -f
+                  /bitnami/postgresql/.initialized ]
+            failureThreshold: 6
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 5
+          resources:
+            requests:
+              cpu: 250m
+              memory: 256Mi
+          securityContext:
+            runAsUser: 1001
+          volumeMounts:
+            - mountPath: /dev/shm
+              name: dshm
+      initContainers: null
+      securityContext:
+        fsGroup: 1001
+      volumes:
+        - emptyDir:
+            medium: Memory
+            sizeLimit: 1Gi
+          name: dshm
+        - emptyDir: {}
+          name: data
+  updateStrategy:
+    type: RollingUpdate
+---
+apiVersion: apps/v1beta1
+kind: StatefulSet
+metadata:
+  labels:
+    app: mariadb
+    chart: mariadb-7.3.12
+    component: master
+    heritage: Tiller
+    release: orc8r
+  name: release-name-mariadb
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mariadb
+      component: master
+      release: orc8r
+  serviceName: release-name-mariadb
+  template:
+    metadata:
+      labels:
+        app: mariadb
+        chart: mariadb-7.3.12
+        component: master
+        release: orc8r
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app: mariadb
+                    release: orc8r
+                topologyKey: kubernetes.io/hostname
+              weight: 1
+      containers:
+        - env:
+            - name: MARIADB_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: mariadb-root-password
+                  name: release-name-mariadb
+            - name: MARIADB_USER
+              value: magma
+            - name: MARIADB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: mariadb-password
+                  name: release-name-mariadb
+            - name: MARIADB_DATABASE
+              value: magma
+          image: 'docker.io/bitnami/mariadb:10.3.22-debian-10-r27'
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            exec:
+              command:
+                - sh
+                - '-c'
+                - |
+                  password_aux="${MARIADB_ROOT_PASSWORD:-}"
+                  if [ -f "${MARIADB_ROOT_PASSWORD_FILE:-}" ]; then
+                      password_aux=$(cat $MARIADB_ROOT_PASSWORD_FILE)
+                  fi
+                  mysqladmin status -uroot -p$password_aux
+            failureThreshold: 3
+            initialDelaySeconds: 120
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          name: mariadb
+          ports:
+            - containerPort: 3306
+              name: mysql
+          readinessProbe:
+            exec:
+              command:
+                - sh
+                - '-c'
+                - |
+                  password_aux="${MARIADB_ROOT_PASSWORD:-}"
+                  if [ -f "${MARIADB_ROOT_PASSWORD_FILE:-}" ]; then
+                      password_aux=$(cat $MARIADB_ROOT_PASSWORD_FILE)
+                  fi
+                  mysqladmin status -uroot -p$password_aux
+            failureThreshold: 3
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            successThreshold: 1
+            timeoutSeconds: 1
+          volumeMounts:
+            - mountPath: /bitnami/mariadb
+              name: data
+            - mountPath: /opt/bitnami/mariadb/conf/my.cnf
+              name: config
+              subPath: my.cnf
+      initContainers: null
+      securityContext:
+        fsGroup: 1001
+        runAsUser: 1001
+      serviceAccountName: default
+      volumes:
+        - configMap:
+            name: release-name-mariadb
+          name: config
+        - emptyDir: {}
+          name: data
+  updateStrategy:
+    type: RollingUpdate
