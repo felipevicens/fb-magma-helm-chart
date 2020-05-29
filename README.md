@@ -1,5 +1,7 @@
 # Facebook magma helm charts
 
+[![IcePanel](http://staging.designer.icepanel.io/img/badges/view.svg)](http://staging.designer.icepanel.io?ref=https://raw.githubusercontent.com/felipevicens/fb-magma-helm-chart/master/orc8r/output/icepanel.yml)
+
 ## Adding this helm repo in OSM
 
 ```bash
