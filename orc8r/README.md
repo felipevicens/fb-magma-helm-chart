@@ -1,6 +1,6 @@
 # Orchestrator Helm Deployment
 
-[![IcePanel](http://staging.designer.icepanel.io/img/badges/view.svg)](http://staging.designer.icepanel.io?ref=https://raw.githubusercontent.com/felipevicens/fb-magma-helm-chart/master/orc8r/output/icepanel.yml)
+[![IcePanel](http://designer.icepanel.io/img/badges/view.svg)](http://staging.designer.icepanel.io?ref=https://raw.githubusercontent.com/felipevicens/fb-magma-helm-chart/master/orc8r/output/icepanel.yml)
 
 The contents of this README have been moved to the "Deploying Orchestrator"
 section of the docs: https://facebookincubator.github.io/magma.
