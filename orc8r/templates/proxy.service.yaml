@@ -43,8 +43,8 @@ spec:
       {{- end }}
     {{- end }}
 {{- if eq .Values.proxy.service.type "LoadBalancer" }}
-  {{- if .Values.proxy.service.loadBalancerIP }}
-  loadBalancerIP: {{ .Values.proxy.service.loadBalancerIP }}
+  {{- if .Values.proxyserviceloadBalancerIP }}
+  loadBalancerIP: {{ .Values.proxyserviceloadBalancerIP }}
   {{- end -}}
   {{- if .Values.proxy.service.loadBalancerSourceRanges }}
   loadBalancerSourceRanges:

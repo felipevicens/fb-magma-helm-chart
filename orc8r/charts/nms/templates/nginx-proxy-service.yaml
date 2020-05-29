@@ -32,8 +32,8 @@ spec:
     {{- end -}}
     {{- end -}}
 {{- if eq $serviceType "LoadBalancer" }}
-  {{- if .Values.nginx.service.loadBalancerIP }}
-  loadBalancerIP: {{ .Values.nginx.service.loadBalancerIP }}
+  {{- if .Values.nginxserviceloadBalancerIP }}
+  loadBalancerIP: {{ .Values.nginxserviceloadBalancerIP }}
   {{- end -}}
   {{- if .Values.nginx.service.loadBalancerSourceRanges }}
   loadBalancerSourceRanges:

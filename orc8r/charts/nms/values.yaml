@@ -51,6 +51,7 @@ magmalte:
 
 ## Nginx-Proxy
 #
+nginxserviceloadBalancerIP: ""
 nginx:
   manifests:
     configmap: true
